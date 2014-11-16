@@ -1,0 +1,51 @@
+{
+  "name": "flickr_sync",
+  "version": "0.0.1",
+  "author": {
+    "name": "Tloxipeuhca",
+    "email": "tloxipeuhca@gmail.com"
+  },
+  "description": "A node.js app to sync local photos with flickr",
+  "dependencies": {
+    "async": "~0.2.10",
+    "flickrapi": "~0.3.28",
+    "lodash": "~2.4.1",
+    "winston": "~0.8.3",
+  },
+  "devDependencies": {
+    "flickrapi": "~0.3.28"
+  },
+  "main": "./src/sync",
+  "licenses": [
+    {
+      "type": "GPLv3",
+      "url": "http://www.gnu.org/licenses/gpl-3.0.html"
+    }
+  ],
+  "engines": {
+    "node": ">=0.10"
+  },
+  "keywords": [
+    "flickrapi",
+    "flickr",
+    "api",
+    "oauth",
+    "sync"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tloxipeuhca/node-flickr-sync.git"
+  },
+  "scripts": {
+    "test": "node src/sync.js"
+  },
+  "bugs": {
+    "url": "https://github.com/tloxipeuhca/node-flickr-sync/issues"
+  },
+  "maintainers": [
+    {
+      "name": "Tloxipeuhca",
+      "email": "tloxipeuhca@gmail.com"
+    }
+  ]
+}
