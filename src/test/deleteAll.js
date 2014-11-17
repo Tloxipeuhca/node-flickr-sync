@@ -17,15 +17,16 @@ async.waterfall([
     });
   },
   function(photos, next) {
+    var ids = [];
     async.each(photos, function(photo, eachCallback) {
       console.log(photo.id);
       _Flickr.photos.delete({'photo_id': photo.id}, eachCallback);
     }, next);
   }
-], function(error, result) {
+], function(error, results) {
   if (error) {
     return console.log(error);
   }
-  console.log(result);
-  console.log("end good job ");
+  //console.log('Deleted IDs: '+JSON.stringify(results));
+  console.log("End good job ");
 });

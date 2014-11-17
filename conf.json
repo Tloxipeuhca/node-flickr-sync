@@ -1,0 +1,33 @@
+{
+  "photos": {
+    "path": ".\\photos",
+    "excluded": {
+      "after": null,
+      "before": null,
+      "forceExcludedDirectories": [],
+      "forceIncludedDirectories": ["Divers - Expo voitures", "Divers - EID"],
+      "forceToUseOnlyIncludedDirectories": false
+    },
+    "extensions": [".jpeg", ".jpg", ".png"],
+    "isPublic": 0, 
+    "isFriend": 1, 
+    "isFamily": 1,
+    "parallelUploadDirectories": 1,
+    "parallelUploadPerms": 4,
+    "parallelUploadPhotos": 1
+  },
+  "winston": {
+    "console": {
+      "level": "silly",
+      "json": false,
+      "colorize": true,
+      "timestamp": true
+    },
+    "file": {
+      "level": "silly",
+      "timestamp": true,
+      "filename": "./app.log",
+      "json": false
+    }
+  }
+}

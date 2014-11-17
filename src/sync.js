@@ -1,17 +1,24 @@
 var             _ = require('lodash'),
+         appToken = require('../app.json'),
             async = require('async'),
              conf = require('./helpers/confHelper'),
        fileHelper = require('./helpers/fileHelper'),
            Flickr = require("flickrapi"), 
                fs = require('fs'),
-            token = require('./helpers/tokenHelper'),
+         getToken = require('./lib/getToken'),
+             path = require('path'),
   uploadDirectory = require('./lib/uploadDirectory'),
           winston = require('winston');
 
 // How to execute
-// optional argv2, argv3
-// node src/sync.js
-// node src/sync.js argConf.json argToken.json
+// arguments
+//   optional argv2, argv3, argv4
+//   argv2 path to photos conf json file
+//   argv3 path to token json file
+// scripts
+//   node src/sync.js
+//   node src/sync.js argConf.json
+//   node src/sync.js argConf.json argToken.json
 
 // Init winston for log
 if (conf.winston) {
@@ -27,10 +34,25 @@ if (conf.winston) {
 var _Flickr = null;
 async.waterfall([
   function(next) {
-    // Get flickr token
-    Flickr.authenticate(token, next);
+    var tokenPath = process.argv[3] || './token.json';
+    if (fs.existsSync(path.resolve(tokenPath))) {
+      var token = require('./helpers/tokenHelper');
+      if (!token) {
+        return next('Token file is corrupt.')
+      }
+      return next(null, token, tokenPath);
+    }
+    else {
+      getToken(appToken, "delete", tokenPath, next);
+    }
   },
-  function(flickr, next) {
+  function(token, tokenPath, next) {
+    // Get flickrToken
+    Flickr.authenticate(token, function(error, flickr) {
+      next(error, flickr, token);
+    });
+  },
+  function(flickr, token, next) {
     // Get all photosets
     _Flickr = flickr;
     _Flickr.photosets.getList({"user_id": token.user_id, "perpage": 100000}, function(error, result) {

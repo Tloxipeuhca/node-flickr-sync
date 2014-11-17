@@ -3,7 +3,7 @@ var    _ = require('lodash'),
 
 var token = {};
 try {
-  token = require('../token.json');
+  token = require('../../token.json');
 }
 catch(e) {}
 

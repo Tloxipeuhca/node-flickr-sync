@@ -5,7 +5,7 @@ var    _ = require('lodash'),
 try {
   if (process.argv[2]) {
     var photosConf = require(path.resolve(process.argv[2]));
-    conf = _.extend(conf.photos, photosConf);
+    _.extend(conf.photos, photosConf);
   }
 }
 catch(e) {
