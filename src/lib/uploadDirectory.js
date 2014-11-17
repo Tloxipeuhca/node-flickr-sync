@@ -70,7 +70,7 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
           );
         }
       });
-      async.parallelLimit(tasks, photosConf.parallelUploadPerms || 1, next); 
+      async.parallelLimit(tasks, photosConf.parallelUpdatePerms || 1, next); 
     }
   ], callback);
 };

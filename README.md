@@ -4,8 +4,9 @@ A node.js app to sync local photos with flickr.
 
 ## Donation
 
-  > Do you appreciate this application we provide ?
-  > If you do, why not support us by donating a small amount via Paypal.
+Do you appreciate this application we provide ?
+
+If you do, why not support us by donating a small amount via Paypal.
 
 [![Donate](https://cms.paypal.com/en_US/i/logo/paypal_logo.gif)](https://www.googledrive.com/host/0B0SxcWkfE1JrTHEycWYzXzNtNGs)
 
@@ -15,7 +16,10 @@ A node.js app to sync local photos with flickr.
   2. You can abort and restart the sync, the app bypass the uploaded photos ;
   3. Your localy folder name would be an album on flickr ;
   4. All your folders or subfolders name would be a collection of tags on flickr ; 
-  5. Each folder name would be split by the char '-' to get a collection of tags.
+  5. Each folder name would be split by the char '-' to get a collection of tags ;
+  6. You can configure the access rules to your photos ;
+  7. You can exclude directories to sync ;
+  8. A default conf to try the app, you will upload the current photos (in the directory ./photos) to your flick.
 
 ## Installation
 
@@ -47,3 +51,18 @@ node src/sync.js argConf.json
 node src/sync.js argConf.json argToken.json
 ```
 
+## Configuration
+
+  * photos.path: the path to photos directory ;
+  * photos.extensions: the files which you can upload to flickr ;
+  * photos.isPublic: boolean to set the photo permission to public ;
+  * photos.isFriend: boolean to set the photo permission to friend ;
+  * photos.isFamily: boolean to set the photo permission to family ;
+  * photos.parallelUpdatePerms: number of photos who are parallely updated ;
+  * photos.parallelUploadDirectories: number of directories who are parallely uploaded ;
+  * photos.parallelUploadPhotos: number of photos who are parallely uploaded (from the same directory) ;
+  * photos.excluded.after: string to exclude all directories who the directory name is after this param (alphabetically) ;
+  * photos.excluded.before: string to exclude all directories who the directory name is before this param (alphabetically) ; 
+  * photos.excluded.forceExcludedDirectories: array of excluded directories ;
+  * photos.excluded.forceIncludedDirectories: array of included directories ;
+  * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories.  
