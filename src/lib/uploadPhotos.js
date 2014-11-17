@@ -5,7 +5,6 @@ var        _ = require('lodash'),
       Flickr = require("flickrapi"), 
           fs = require('fs'),
         path = require('path'),
-       token = require('../helpers/tokenHelper'),
      winston = require('winston');
 
 module.exports = function(flickrApi, dirPath, filePaths, callback) {
@@ -25,7 +24,7 @@ module.exports = function(flickrApi, dirPath, filePaths, callback) {
   var clonedPhotos = _.clone(photos);
   var uploadOptions = {photos: photos};
   winston.info("Upload photo", JSON.stringify(uploadOptions.photos));
-  Flickr.upload(uploadOptions, token, function(error, results) {
+  Flickr.upload(uploadOptions, require('../helpers/tokenHelper'), function(error, results) {
     if (error) {
       return callback(error);
     }

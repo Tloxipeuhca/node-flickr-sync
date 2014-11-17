@@ -16,7 +16,10 @@ module.exports.createPhotosetAndUploadPhotos = function(flickrApi, photoSetName,
     function(photos, next) {
       // Create photoset
       flickrApi.photosets.create({'title': photoSetName, 'primary_photo_id': photos[0].id}, function(error, photosets) {
-        next(error, photosets.photoset);
+        if (error) {
+          return next(error);
+        }
+        next(null, photosets.photoset);
       });
     },
     function(photoset, next) {

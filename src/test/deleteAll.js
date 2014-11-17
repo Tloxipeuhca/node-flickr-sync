@@ -19,7 +19,6 @@ async.waterfall([
   function(photos, next) {
     var ids = [];
     async.each(photos, function(photo, eachCallback) {
-      console.log(photo.id);
       _Flickr.photos.delete({'photo_id': photo.id}, eachCallback);
     }, next);
   }

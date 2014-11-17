@@ -1,16 +1,16 @@
 var    _ = require('lodash'), 
     path = require('path');
 
-var token = {};
+var token = null;
 try {
-  token = require('../../token.json');
+  token = require(path.resolve('token.json'));
 }
-catch(e) {}
+catch(e) { }
 
 try {
   if (process.argv[3]) {
     var confToken = require(path.resolve(process.argv[3]));
-    conf = _.extend(token, confToken);
+    token = _.extend(token || {}, confToken);
   }
 }
 catch(e) {
