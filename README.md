@@ -2,13 +2,6 @@
 
 A node.js app to sync local photos with flickr.
 
-## Donation
-
-Do you appreciate this application we provide ?
-If you do, why not support us by donating a small amount via Paypal.
-
-[![Donate](https://cms.paypal.com/en_US/i/logo/paypal_logo.gif)](https://www.googledrive.com/host/0B0SxcWkfE1JrTHEycWYzXzNtNGs)
-
 ## Features
 
   1. If you haven't a token, you will be asked to create it ;
@@ -19,6 +12,13 @@ If you do, why not support us by donating a small amount via Paypal.
   6. You can configure the access rules to your photos ;
   7. You can exclude directories to sync ;
   8. A default conf to try the app, you will upload the current photos (from directory ./photos) to your flick.
+
+## Donation
+
+Do you appreciate this application we provide ?
+If you do, why not support us by donating a small amount via Paypal.
+
+[![Donate](https://cms.paypal.com/en_US/i/logo/paypal_logo.gif)](https://www.googledrive.com/host/0B0SxcWkfE1JrTHEycWYzXzNtNGs)
 
 ## Installation
 
