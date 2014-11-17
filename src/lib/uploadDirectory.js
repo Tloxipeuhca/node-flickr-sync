@@ -14,6 +14,9 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
       fileHelper.getPhotosRecursively(dirPath, next);
     },
     function(files, next) {
+      if (files.length === 0) {
+        return next();
+      }
       // Check if flickr photoset exist
       var results = _.where(photosets.photoset, {'title': {'_content': path.basename(dirPath)}});
       // New photoset, upload photos

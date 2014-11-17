@@ -104,14 +104,28 @@ module.exports.applyExclusionRules = function(directories) {
       return directoriesByRules.push(directory);
     if (rules.forceToUseOnlyIncludedDirectories)
       return;
-    if (rules.before && rules.after && directoryName <= rules.before && directoryName >= rules.after ||
-        rules.before && !rules.after && directoryName <= rules.before ||
-        !rules.before && rules.after && directoryName >= rules.after ||
-        !rules.before && !rules.after) {
+
+    
+    if (rules.before && rules.after) {
+      if (directoryName >= rules.before && directoryName <= rules.after) {
+        directoriesByRules.push(directory);
+      }
+    } 
+    else if (rules.before) {
+      if (directoryName >= rules.before) {
+        directoriesByRules.push(directory);
+      }
+    }
+    else if (rules.after) {
+      if (directoryName <= rules.after) {
+        directoriesByRules.push(directory);
+      }
+    }
+    else {
       directoriesByRules.push(directory);
     }
   });
-  return directoriesByRules;
+  return directoriesByRules.sort();
 }
 
 function formatArray(datas) {

@@ -10,6 +10,9 @@ uploadPhotos = require('./uploadPhotos'),
 module.exports.createPhotosetAndUploadPhotos = function(flickrApi, photoSetName, dirPath, files, callback) {
   async.waterfall([
     function(next) {
+      if (files.length < 1) {
+        return next('One photo is required to create a photoset.');
+      }
       // Upload first photos
       uploadPhotos(flickrApi, dirPath, [files.shift()], next);
     },

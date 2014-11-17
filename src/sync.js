@@ -75,7 +75,7 @@ async.waterfall([
     var directories = fileHelper.getDirectories(conf.photos.path);
     // Function to exclude directories to sync
     directories = fileHelper.applyExclusionRules(directories);
-    winston.debug('Directories to sync', JSON.stringify(directories));
+    winston.debug(directories.length + ' directories to sync', JSON.stringify(directories));
     var tasks = [];
     _.each(directories, function(directory, parallelCallback) {
       tasks.push(
