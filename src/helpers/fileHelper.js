@@ -31,7 +31,7 @@ module.exports.getPhotosRecursively = function(dirPath, done) {
       return done(error);
     }
     _.each(files, function(file) {
-      if (_.contains(conf.photos.extensions, path.extname(file))) {
+      if (_.contains(conf.photos.extensions, path.extname(file).toLowerCase())) {
         photos.push(file);
       }
     });
@@ -69,7 +69,7 @@ module.exports.getFileInfos = function(dirPath, filePath) {
                       .split(path.sep);
   var tags = [];
   _.each(directories, function(directory) {
-    tags.push(formatArray(directory.split('-')));
+    tags.push(formatArray(directory.split(' - ')));
   });
 
   return {
@@ -105,7 +105,6 @@ module.exports.applyExclusionRules = function(directories) {
     if (rules.forceToUseOnlyIncludedDirectories)
       return;
 
-    
     if (rules.before && rules.after) {
       if (directoryName >= rules.before && directoryName <= rules.after) {
         directoriesByRules.push(directory);
