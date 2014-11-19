@@ -7,7 +7,7 @@ var        _ = require('lodash'),
 uploadPhotos = require('./uploadPhotos'),
      winston = require('winston');
 
-module.exports.createPhotosetAndUploadPhotos = function(flickrApi, photoSetName, dirPath, files, callback) {
+var createPhotosetAndUploadPhotos = module.exports.createPhotosetAndUploadPhotos = function(flickrApi, photoSetName, dirPath, files, callback) {
   async.waterfall([
     function(next) {
       if (files.length < 1) {
@@ -17,17 +17,29 @@ module.exports.createPhotosetAndUploadPhotos = function(flickrApi, photoSetName,
       uploadPhotos(flickrApi, dirPath, [files.shift()], next);
     },
     function(photos, next) {
+      if (!photos[0].id) {
+        if (files.length > 0) {
+          return createPhotosetAndUploadPhotos(flickrApi, photoSetName, dirPath, files, callback);
+        }
+        return next(null, null);
+      }
       // Create photoset
+      winston.info("Create photoset "+photoSetName+" add photo "+ photos[0].id);
       flickrApi.photosets.create({'title': photoSetName, 'primary_photo_id': photos[0].id}, function(error, photosets) {
         if (error) {
+          winston.error("Create photoset "+photoSetName);
           return next(error);
         }
-        next(null, photosets.photoset);
+        return next(null, photosets.photoset);
       });
+      
     },
     function(photoset, next) {
       // Upload others photos and add it to photoSet
-      uploadPhotosToPhotoset(flickrApi, photoset, dirPath, files, callback);
+      if (files.length > 0) {
+        return uploadPhotosToPhotoset(flickrApi, photoset, dirPath, files, next);
+      }
+      return next();
     } 
   ], callback);
 };
@@ -42,7 +54,13 @@ var uploadPhotosToPhotoset = module.exports.uploadPhotosToPhotoset = function(fl
             uploadPhotos(flickrApi, dirPath, [file], next);
           },
           function(photos, next) {
-            flickrApi.photosets.addPhoto({'photoset_id': photoset.id, 'photo_id': photos[0].id}, next);
+            winston.info("Add photo "+photos[0].id+" to photoset "+photoset.id+".");
+            flickrApi.photosets.addPhoto({'photoset_id': photoset.id, 'photo_id': photos[0].id}, function(error, result) {
+              if (error) {
+                winston.error("Add photo "+photos[0].id+" to photoset "+photoset.id+".", error.toString());
+              }
+              next(null, result);
+            });
           }
         ], parallelCallback);
       }

@@ -23,14 +23,17 @@ module.exports = function(flickrApi, dirPath, filePaths, callback) {
   });
   var clonedPhotos = _.clone(photos);
   var uploadOptions = {photos: photos};
-  winston.info("Upload photo", JSON.stringify(uploadOptions.photos));
+  winston.info("Upload photos", JSON.stringify(uploadOptions.photos));
   Flickr.upload(uploadOptions, require('../helpers/tokenHelper'), function(error, results) {
     if (error) {
-      return callback(error);
+      winston.error(error);
+      // Don't add error to continue the process
+      return callback(null, clonedPhotos);
     }
     _.each(clonedPhotos, function(photo, index) {
       photo.id = results[index];
     });
+    winston.info("Upload photos success", JSON.stringify(clonedPhotos));
     callback(null, clonedPhotos);
   });
 };

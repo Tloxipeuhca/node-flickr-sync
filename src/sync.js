@@ -88,7 +88,7 @@ async.waterfall([
   }
 ], function(error, result) {
   if (error) {
-    return winston.error(error);
+    return winston.error(error.toString());
   }
   winston.info("Good job");
 });
