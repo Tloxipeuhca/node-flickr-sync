@@ -12,7 +12,7 @@ A node.js app to sync local photos with flickr.
   6. You can configure the access rules to your photos ;
   7. You can exclude directories to sync ;
   8. A default conf to try the app, you will upload the current photos (from directory ./photos) to your flick ;
-  9. Continue upload process after an error occur ;
+  9. Continue upload process after an upload error occur ;
   10. Add an application launcher for windows, double click on the sync.bat.
 
 ## Donation
