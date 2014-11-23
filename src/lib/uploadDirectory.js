@@ -3,6 +3,7 @@ var                _ = require('lodash'),
                 conf = require('../helpers/confHelper'),
           fileHelper = require('../helpers/fileHelper'),
                   fs = require('fs'),
+   getPhotosetPhotos = require('./getPhotosetPhotos'),
                 path = require('path'),
      photoSetManager = require('./photoSetManager'),           
              winston = require('winston');
@@ -21,25 +22,23 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
       var results = _.where(photosets.photoset, {'title': {'_content': path.basename(dirPath)}});
       // New photoset, upload photos
       if (results.length === 0) {
+        winston.info("Create photoset", JSON.stringify({"name": path.basename(dirPath)}));
         return photoSetManager.createPhotosetAndUploadPhotos(flickrApi, path.basename(dirPath), dirPath, files, next);
       }
       // Sync existing photoSet
       return syncExistingPhotoSet(flickrApi, results[0], dirPath, files, next)
     }
   ], callback);
-}
+};
 
 var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickrApi, photoset, dirPath, files, callback) {
   async.waterfall([
     function(next) {
-      flickrApi.photosets.getPhotos({"photoset_id": photoset.id}, function(error, results) {
-        if (error) {
-          return next(error);
-        }
-        return next(null, results.photoset.photo);
-      });
+      winston.info("Get photoset photos", JSON.stringify({"id": photoset.id, "name": photoset.title._content}));
+      getPhotosetPhotos(flickrApi, photoset.id, next);
     },
     function(photos, next) {
+      // Upload new photos
       var    newPhotos = [],
         existingPhotos = [];
       _.each(files, function(file) {
@@ -58,7 +57,7 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       });
     },
     function(existingPhotos, next) {
-      // Update photos perms
+      // Update photos perms if needed
       var tasks = [];
       var photosConf = conf.photos;
       _.each(existingPhotos, function(photo) {
@@ -73,7 +72,13 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
           );
         }
       });
-      async.parallelLimit(tasks, photosConf.parallelUpdatePerms || 1, next); 
+      async.parallelLimit(tasks, photosConf.parallelUpdatePerms || 1, function(error) {
+        return next(error, existingPhotos);
+      }); 
+    },
+    function(existingPhotos, next) {
+      // Update photos tags
+      return next();
     }
   ], callback);
 };
