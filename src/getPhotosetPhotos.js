@@ -1,25 +1,14 @@
 var             _ = require('lodash'),
-         appToken = require('../app.json'),
             async = require('async'),
              conf = require('./helpers/confHelper'),
        fileHelper = require('./helpers/fileHelper'),
            Flickr = require("flickrapi"), 
                fs = require('fs'),
 getPhotosetPhotos = require('./lib/getPhotosetPhotos'),
-         getToken = require('./lib/getToken'),
+      tokenHelper = require('./helpers/tokenHelper'),
              path = require('path'),
           winston = require('winston');
 
-// Init winston for log
-if (conf.winston) {
-  winston.remove(winston.transports.Console);
-  if (conf.winston.console) {
-    winston.add(winston.transports.Console, conf.winston.console);
-  }
-  if (conf.winston.file) {
-    winston.add(winston.transports.File, conf.winston.file);
-  }
-}   
 
 /*if (process.argv.length < 3) {
   return winston.warn("You must specify the photosetId.")
@@ -30,21 +19,7 @@ var photosetId = '72157648985206250';
 var _Flickr = null;
 async.waterfall([
   function(next) {
-    // load token
-
-    var token = require('./helpers/tokenHelper');
-    if(token) {
-      return next(null, token);
-    }
-    else {
-      getToken(appToken, "delete", process.argv[3] || './token.json', function(error, token, tokenPath) {
-        if (error) {
-          return next(error);
-        }
-        delete require.cache[require.resolve('./helpers/tokenHelper')];
-        return next(null, token);
-      });
-    }
+    tokenHelper.init(next);
   },
   function(token, next) {
     // Get flickrToken

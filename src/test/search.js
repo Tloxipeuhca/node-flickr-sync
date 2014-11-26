@@ -1,9 +1,12 @@
-var async = require('async')
-   Flickr = require("flickrapi"), 
-    token = require('../helpers/tokenHelper');
+var       async = require('async')
+         Flickr = require("flickrapi"), 
+    tokenHelper = require('../helpers/tokenHelper');
 
 async.waterfall([
   function(next) {
+    tokenHelper.init(next);
+  },
+  function(token, next) {
     Flickr.authenticate(token, next);
   },
   function(flickr, next) {

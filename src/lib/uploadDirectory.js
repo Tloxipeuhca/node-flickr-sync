@@ -78,6 +78,11 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
     },
     function(existingPhotos, next) {
       // Update photos tags
+      // Algo
+      // 1) get photo from photo.id
+      // 2) get current photos tags (fileHelper.getFileInfos(dirPath, (photo.comment.relativePath || currentFolder);
+      // 3) update tags
+      // var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
       return next();
     }
   ], callback);

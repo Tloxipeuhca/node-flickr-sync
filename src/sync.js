@@ -1,11 +1,10 @@
 var             _ = require('lodash'),
-         appToken = require('../app.json'),
             async = require('async'),
              conf = require('./helpers/confHelper'),
        fileHelper = require('./helpers/fileHelper'),
            Flickr = require("flickrapi"), 
                fs = require('fs'),
-         getToken = require('./lib/getToken'),
+      tokenHelper = require('./helpers/tokenHelper'),
              path = require('path'),
   uploadDirectory = require('./lib/uploadDirectory'),
           winston = require('winston');
@@ -20,34 +19,10 @@ var             _ = require('lodash'),
 //   node src/sync.js argConf.json
 //   node src/sync.js argConf.json argToken.json
 
-// Init winston for log
-if (conf.winston) {
-  winston.remove(winston.transports.Console);
-  if (conf.winston.console) {
-    winston.add(winston.transports.Console, conf.winston.console);
-  }
-  if (conf.winston.file) {
-    winston.add(winston.transports.File, conf.winston.file);
-  }
-}     
-
 var _Flickr = null;
 async.waterfall([
   function(next) {
-    // load token
-    var token = require('./helpers/tokenHelper');
-    if(token) {
-      return next(null, token);
-    }
-    else {
-      getToken(appToken, "delete", process.argv[3] || './token.json', function(error, token, tokenPath) {
-        if (error) {
-          return next(error);
-        }
-        delete require.cache[require.resolve('./helpers/tokenHelper')];
-        return next(null, token);
-      });
-    }
+    tokenHelper.init(next);
   },
   function(token, next) {
     // Get flickrToken
@@ -67,12 +42,13 @@ async.waterfall([
   },
   function(photosets, next) {
     // Get directories to sync
+    var photosPath = path.resolve(conf.photos.path);
     winston.debug('Photosets', JSON.stringify(photosets));
-    winston.debug('Directory path to sync', conf.photos.path);
-    if (!fs.existsSync(conf.photos.path)) {
-      return next('Dircectory paht to sync doesn\'t exist: '+conf.photos.path)
+    winston.debug('Directory path to sync', photosPath);
+    if (!fs.existsSync(photosPath)) {
+      return next('Dircectory paht to sync doesn\'t exist: '+photosPath)
     }
-    var directories = fileHelper.getDirectories(conf.photos.path);
+    var directories = fileHelper.getDirectories(photosPath);
     // Function to exclude directories to sync
     directories = fileHelper.applyExclusionRules(directories);
     winston.debug(directories.length + ' directories to sync', JSON.stringify(directories));
@@ -92,53 +68,3 @@ async.waterfall([
   }
   winston.info("Good job");
 });
-
-function requireUncached(module){
-  delete require.cache[require.resolve(module)]
-  return require(module)
-}
-
-/**
- * Removes a module from the cache
- */
-require.uncache = function (moduleName) {
-    // Run over the cache looking for the files
-    // loaded by the specified module name
-    require.searchCache(moduleName, function (mod) {
-        delete require.cache[mod.id];
-    });
-
-    // Remove cached paths to the module.
-    // Thanks to @bentael for pointing this out.
-    Object.keys(module.constructor._pathCache).forEach(function(cacheKey) {
-        if (cacheKey.indexOf(moduleName)>0) {
-            delete module.constructor._pathCache[cacheKey];
-        }
-    });
-};
-
-/**
- * Runs over the cache to search for all the cached
- * files
- */
-require.searchCache = function (moduleName, callback) {
-    // Resolve the module identified by the specified name
-    var mod = require.resolve(moduleName);
-
-    // Check if the module has been resolved and found within
-    // the cache
-    if (mod && ((mod = require.cache[mod]) !== undefined)) {
-        // Recursively go over the results
-        (function run(mod) {
-            // Go over each of the module's children and
-            // run over it
-            mod.children.forEach(function (child) {
-                run(child);
-            });
-
-            // Call the specified callback providing the
-            // found module
-            callback(mod);
-        })(mod);
-    }
-};
