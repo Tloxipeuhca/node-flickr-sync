@@ -9,7 +9,7 @@
       "forceToUseOnlyIncludedDirectories": false
     },
     "extensions": [".jpeg", ".jpg", ".png", ".tiff", ".mp4"],
-    "isPublic": 0, 
+    "isPublic": 1, 
     "isFriend": 1, 
     "isFamily": 1,
     "parallelUpdatePerms": 4,

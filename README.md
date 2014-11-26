@@ -1,6 +1,7 @@
 # node-flickr-sync
 
 A node.js app to sync local photos with flickr.
+You can see the result on [my flickr](https://www.flickr.com/photos/129434165@N03).
 
 ## Features
 
