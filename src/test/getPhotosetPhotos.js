@@ -9,14 +9,8 @@ getPhotosetPhotos = require('./lib/getPhotosetPhotos'),
              path = require('path'),
           winston = require('winston');
 
-
-/*if (process.argv.length < 3) {
-  return winston.warn("You must specify the photosetId.")
-}  */
-
 var photosetId = '72157648985206250';
 
-var _Flickr = null;
 async.waterfall([
   function(next) {
     tokenHelper.init(next);
