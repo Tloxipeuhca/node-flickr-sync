@@ -77,6 +77,7 @@ module.exports.getFileInfos = function(dirPath, filePath) {
     relativePath: filePath.replace(path.join(dirPath, '..'), '.'),
     name: path.basename(filePath),
     nameWithoutExt: path.basename(filePath, path.extname(filePath)),
+    _tags: _.flatten(tags),
     tags: formatTags(_.flatten(tags))
   };
 };

@@ -9,10 +9,11 @@
       "forceToUseOnlyIncludedDirectories": false
     },
     "extensions": [".jpeg", ".jpg", ".png", ".tiff", ".mp4"],
-    "isPublic": 0, 
-    "isFriend": 1, 
-    "isFamily": 1,
+    "isPublic": 1, 
+    "isFriend": 0, 
+    "isFamily": 0,
     "parallelUpdatePerms": 4,
+    "parallelUpdateTags": 4,
     "parallelUploadDirectories": 1,
     "parallelUploadPhotos": 1
   },

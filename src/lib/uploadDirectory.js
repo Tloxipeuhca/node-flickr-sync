@@ -39,8 +39,9 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
     },
     function(photos, next) {
       // Upload new photos
-      var    newPhotos = [],
-        existingPhotos = [];
+      var     newPhotos = [],
+         existingPhotos = [],
+        duplicatePhotos = [];
       _.each(files, function(file) {
         var fileName = path.basename(file, path.extname(file));
         var results = _.where(photos, {'title': fileName});
@@ -48,7 +49,9 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
           newPhotos.push(file);
         }
         else {
-          existingPhotos.push(results[0]);
+          results[0].path = file;
+          existingPhotos.push(results.shift());
+          duplicatePhotos.push(results);
         }
       });
 
@@ -64,10 +67,10 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         if (photo.ispublic !== photosConf.isPublic ||
             photo.isfriend !== photosConf.isFriend ||
             photo.isfamily !== photosConf.isFamily) {
-          winston.info("Update photo", JSON.stringify(photo));
+          winston.info("Update photo perms", JSON.stringify(photo));
           tasks.push(
             function(parallelCallback) {
-              flickrApi.photos.setPerms({"photo_id": photo.id, "is_public": photosConf.isPublic, "is_friend": photosConf.isFriend, "is_family": photosConf.isFamily}, parallelCallback)
+              flickrApi.photos.setPerms({"photo_id": photo.id, "is_public": photosConf.isPublic, "is_friend": photosConf.isFriend, "is_family": photosConf.isFamily}, parallelCallback);
             }
           );
         }
@@ -78,12 +81,49 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
     },
     function(existingPhotos, next) {
       // Update photos tags
-      // Algo
-      // 1) get photo from photo.id
-      // 2) get current photos tags (fileHelper.getFileInfos(dirPath, (photo.comment.relativePath || currentFolder);
-      // 3) update tags
-      // var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
-      return next();
+      var tasks = [];
+      var photosConf = conf.photos;
+      _.each(existingPhotos, function(photo) { 
+        tasks.push(
+            function(parallelCallback) {
+              updatePhotoTags(flickrApi, photo.id, photo.path, dirPath, parallelCallback);
+            }
+          );
+        });
+      async.parallelLimit(tasks, photosConf.parallelUpdateTags || 1, function(error, results) {
+        return next(error, results);
+      }); 
     }
   ], callback);
 };
+
+var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photoId, photoPath, dirPath, callback) {
+  async.waterfall([
+    function(next) {
+      flickrApi.photos.getInfo({"photo_id": photoId}, function(error, result) {
+        if (error) {
+          return next(error);
+        }
+        return next(null, result.photo);
+      });
+    },
+    function(photoInfo, next) {
+      var fileInfo = fileHelper.getFileInfos(dirPath, photoPath);
+      var photoTags = _.pluck(photoInfo.tags.tag, "raw").sort();
+      var fileTags = fileInfo._tags.sort();
+      var isEqual = _.isEqual(photoTags, fileTags);
+      winston.debug("Photo tags", JSON.stringify({"id": photoId, "photo": photoTags, "file": fileTags, "isEqual": isEqual}));
+
+      if (isEqual) {
+        return next(null, photoInfo);
+      }
+      winston.info("Update photo tags", JSON.stringify({"id": photoId}));
+      return flickrApi.photos.setTags({"photo_id": photoId, "tags": fileInfo.tags}, next);
+    }
+  ], function(error) {
+    if (error) {
+      winston.warn("Update photo tags", e.toString());
+    }
+    callback(null);
+  });
+}
