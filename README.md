@@ -12,7 +12,7 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
   5. Each folder name would be split by the char '-' to get a collection of tags ;
   6. You can configure the access rules to your photos ;
   7. You can exclude directories to sync ;
-  8. A default conf to try the app, you will upload the current photos (from directory ./photos) to your flick ;
+  8. A default conf to try the app, you will upload the attached photos (directory ./photos) to your flick ;
   9. Continue upload process after an upload error occur ;
   10. Add an application launcher for windows, double click on the sync.bat; 
   11. Update photo permissions if config file change ;
@@ -73,5 +73,5 @@ node src/sync.js argConf.json argToken.json
   * photos.excluded.forceExcludedDirectories: array of excluded directories ;
   * photos.excluded.forceIncludedDirectories: array of included directories ;
   * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories ;
-  * photos.removeDuplicated: boolean to remove duplicated photos from same photoset ;
+  * photos.remove duplicated : boolean to remove duplicated photos from same photoset ;
   * photos.updateTags: boolean to update tags.
