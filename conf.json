@@ -1,22 +1,14 @@
 {
   "photos": {
-    "path": "\\\\192.168.0.123\\media\\Pictures",
+    "path": ".\\photos_10%",
     "excluded": {
       "after": null,
       "before": null,
-      "forceExcludedDirectories": [
-        "Divers - 2014 - Maëline - 1 mois", 
-        "Anniversaire - 2013 - 30 ans - Elodie",
-        "Anniversaire - 2013 - 28 ans - Isabelle",
-        "Divers - A vendre",
-        "Fête - 2011 - Mariage - Nathalie", 
-        "Divers - Arcon", 
-        "Divers - Fleurs",
-        "Divers - Corrupt images"],
+      "forceExcludedDirectories": [],
       "forceIncludedDirectories": [],
       "forceToUseOnlyIncludedDirectories": false
     },
-    "extensions": [".jpeg", ".jpg", ".png", ".mp4"],
+    "extensions": [".jpeg", ".jpg", ".png", ".tiff", ".mp4"],
     "isPublic": 0, 
     "isFriend": 1, 
     "isFamily": 1,
