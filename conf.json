@@ -12,10 +12,13 @@
     "isPublic": 1, 
     "isFriend": 0, 
     "isFamily": 0,
+    "parallelDeletePhotos": 4,
     "parallelUpdatePerms": 4,
     "parallelUpdateTags": 4,
     "parallelUploadDirectories": 1,
-    "parallelUploadPhotos": 1
+    "parallelUploadPhotos": 1,
+    "removeDuplicated": true,
+    "updateTags": true
   },
   "winston": {
     "console": { 

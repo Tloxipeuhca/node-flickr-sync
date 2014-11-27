@@ -16,7 +16,8 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
   9. Continue upload process after an upload error occur ;
   10. Add an application launcher for windows, double click on the sync.bat; 
   11. Update photo permissions if config file change ;
-  12. Update photo tags if needed (creating or updating subfolders).
+  12. Update photo tags if needed (creating or updating subfolders) ;
+  13. Remove duplicated photos from same photoset.
 
 ## Donation
 
@@ -62,11 +63,15 @@ node src/sync.js argConf.json argToken.json
   * photos.isPublic: boolean to set the photo permission to public ;
   * photos.isFriend: boolean to set the photo permission to friend ;
   * photos.isFamily: boolean to set the photo permission to family ;
+  * photos.parallelDeletePhotos: number of photos who are parallely deleted ;
   * photos.parallelUpdatePerms: number of photos who are parallely updated ;
+  * photos.parallelUpdateTags: number of photos who are parallely updated ;
   * photos.parallelUploadDirectories: number of directories who are parallely uploaded ;
   * photos.parallelUploadPhotos: number of photos who are parallely uploaded (from the same directory) ;
   * photos.excluded.after: string to exclude all directories who the directory name is after this param (alphabetically) ;
   * photos.excluded.before: string to exclude all directories who the directory name is before this param (alphabetically) ; 
   * photos.excluded.forceExcludedDirectories: array of excluded directories ;
   * photos.excluded.forceIncludedDirectories: array of included directories ;
-  * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories.  
+  * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories ;
+  * photos.removeDuplicated: boolean to remove duplicated photos from same photoset ;
+  * photos.updateTags: boolean to update tags.
