@@ -17,7 +17,7 @@
     "parallelUploadPhotos": 1
   },
   "winston": {
-    "console": {
+    "console": { 
       "level": "silly",
       "json": false,
       "colorize": true,
