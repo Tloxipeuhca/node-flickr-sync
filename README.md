@@ -17,7 +17,9 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
   10. Add an application launcher for windows, double click on the sync.bat; 
   11. Update photo permissions if config file change ;
   12. Update photo tags if needed (creating or updating subfolders) ;
-  13. Remove duplicated photos from same photoset.
+  13. Remove duplicated photos from same photoset ;
+  14. Each photo who are deleted is copied in an album named "Trash" ; 
+  15. You can add to each folder a specific conf to manage permissions and tags.
 
 ## Donation
 
@@ -58,12 +60,13 @@ node src/sync.js argConf.json argToken.json
 
 ## Configuration
 
+### Scope: all project
+
   * photos.path: the path to photos directory ;
   * photos.extensions: the files which you can upload to flickr ;
   * photos.isPublic: boolean to set the photo permission to public ;
   * photos.isFriend: boolean to set the photo permission to friend ;
   * photos.isFamily: boolean to set the photo permission to family ;
-  * photos.parallelDeletePhotos: number of photos who are parallely deleted ;
   * photos.parallelUpdatePerms: number of photos who are parallely updated ;
   * photos.parallelUpdateTags: number of photos who are parallely updated ;
   * photos.parallelUploadDirectories: number of directories who are parallely uploaded ;
@@ -74,4 +77,12 @@ node src/sync.js argConf.json argToken.json
   * photos.excluded.forceIncludedDirectories: array of included directories ;
   * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories ;
   * photos.remove duplicated : boolean to remove duplicated photos from same photoset ;
+  * photos.trashAlbumName : name of the album who deleted photos are copied ;
   * photos.updateTags: boolean to update tags.
+
+### Scope: current folder
+
+  * isPublic: boolean to set the photo permission to public ;
+  * isFriend: boolean to set the photo permission to friend ;
+  * isFamily: boolean to set the photo permission to family ;
+  * tags: an array of string with all tags to add to each photo.
