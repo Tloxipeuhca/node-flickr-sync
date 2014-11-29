@@ -38,7 +38,7 @@ async.waterfall([
         return next(error);
       }
       next(null, result.photosets);
-    })
+    });
   },
   function(photosets, next) {
     // Get directories to sync
@@ -46,7 +46,7 @@ async.waterfall([
     winston.debug('Photosets', JSON.stringify(photosets));
     winston.debug('Directory path to sync', photosPath);
     if (!fs.existsSync(photosPath)) {
-      return next('Dircectory paht to sync doesn\'t exist: '+photosPath)
+      return next('Dircectory path to sync doesn\'t exist: '+photosPath)
     }
     var directories = fileHelper.getDirectories(photosPath);
     // Function to exclude directories to sync

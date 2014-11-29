@@ -22,7 +22,7 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
       var results = _.where(photosets.photoset, {'title': {'_content': path.basename(dirPath)}});
       // New photoset, upload photos
       if (results.length === 0) {
-        winston.info("Create photoset", JSON.stringify({"name": path.basename(dirPath)}));
+        //winston.info("Create photoset", JSON.stringify({"name": path.basename(dirPath)}));
         return photoSetManager.createPhotosetAndUploadPhotos(flickrApi, path.basename(dirPath), dirPath, files, next);
       }
       // Sync existing photoSet
@@ -62,20 +62,21 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
     function(existingPhotos, duplicatePhotos, next) {
       // Update photos perms if needed
       var tasks = [];
-      var photosConf = conf.photos;
       _.each(existingPhotos, function(photo) {
-        if (photo.ispublic !== photosConf.isPublic ||
-            photo.isfriend !== photosConf.isFriend ||
-            photo.isfamily !== photosConf.isFamily) {
+        var photoConf = fileHelper.getFileInfos(dirPath, photo.path);
+        if (photo.ispublic !== photoConf.isPublic ||
+            photo.isfriend !== photoConf.isFriend ||
+            photo.isfamily !== photoConf.isFamily) {
+          console.log(photoConf)
           winston.info("Update photo perms", JSON.stringify(photo));
           tasks.push(
             function(parallelCallback) {
-              flickrApi.photos.setPerms({"photo_id": photo.id, "is_public": photosConf.isPublic, "is_friend": photosConf.isFriend, "is_family": photosConf.isFamily}, parallelCallback);
+              flickrApi.photos.setPerms({"photo_id": photo.id, "is_public": photoConf.isPublic, "is_friend": photoConf.isFriend, "is_family": photoConf.isFamily}, parallelCallback);
             }
           );
         }
       });
-      async.parallelLimit(tasks, photosConf.parallelUpdatePerms || 1, function(error) {
+      async.parallelLimit(tasks, conf.photos.parallelUpdatePerms || 1, function(error) {
         return next(error, existingPhotos, duplicatePhotos);
       }); 
     },
@@ -109,16 +110,11 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       _.each(duplicatePhotos, function(photo) { 
         tasks.push(
           function(parallelCallback) {
-            flickrApi.photos.delete({"photo_id": photo.id}, function(error, result) {
-              if (!error) {
-                winston.info("Photo deleted", JSON.stringify(photo));
-              }
-              parallelCallback(error, result);
-            });
+            photoSetManager.deletePhoto(flickrApi, photoset, photo, parallelCallback);
           }
         );
       });
-      async.parallelLimit(tasks, conf.photos.parallelDeletePhotos || 1, function(error, results) {
+      async.parallelLimit(tasks, 1, function(error, results) {
         return next(null);
       }); 
     }
