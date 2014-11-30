@@ -93,7 +93,8 @@ module.exports.getFileInfos = function(dirPath, filePath) {
 
 var getRecursivelyConf = module.exports.getRecursivelyConf = function(dirPath, filePath) {
   var currentPath = path.resolve(filePath, '..').toLowerCase();
-  while(dirPath.toLowerCase() !== currentPath) {
+  var loop = true;
+  while(loop) {
     var confPath = path.resolve(currentPath, '.sync', 'conf.json');
     if (fs.existsSync(confPath)) {
       try {
@@ -103,6 +104,7 @@ var getRecursivelyConf = module.exports.getRecursivelyConf = function(dirPath, f
         winston.error('Can\'t load conf file '+confPath, e.toString());
       }
     }
+    loop = dirPath.toLowerCase() !== currentPath;
     currentPath = path.resolve(currentPath, '..').toLowerCase();
   }
   return {};
