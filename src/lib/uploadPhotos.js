@@ -17,6 +17,7 @@ module.exports = function(flickrApi, dirPath, filePaths, callback) {
       var photos = [];
       _.each(filePaths, function(filePath) {
         var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
+        
         photos.push({
           title: fileInfo.nameWithoutExt,
           tags: fileInfo.tags.join(' '),

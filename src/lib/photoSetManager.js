@@ -3,6 +3,7 @@ var        _ = require('lodash'),
         conf = require('../helpers/confHelper'),
   fileHelper = require('../helpers/fileHelper'),
           fs = require('fs'),
+   getPhotosetPhotos = require('./getPhotosetPhotos'),
         path = require('path'),
  tokenHelper = require('../helpers/tokenHelper'),
 uploadPhotos = require('./uploadPhotos'),
@@ -70,6 +71,33 @@ var uploadPhotosToPhotoset = module.exports.uploadPhotosToPhotoset = function(fl
   });
   var parallelUpload = (conf && conf.photos) ? conf.photos.parallelUploadPhotos : 1;
   async.parallelLimit(tasks, parallelUpload, callback); 
+};
+
+var deletePhotoset = module.exports.deletePhotoset = function(flickrApi, photoset, callback) { 
+  async.waterfall([
+    function(next) {
+       tokenHelper.init(next);
+    },
+    function(token, next) {
+      getPhotosetPhotos(flickrApi, photoset.id, next);
+    },
+    function(photos, next) {
+      var tasks = [];
+      _.each(photos, function(photo, parallelCallback) {
+        tasks.push(
+          function(parallelCallback) {
+            deletePhoto(flickrApi, photoset, photo, callback);
+          }
+        );
+      });
+      async.parallelLimit(tasks, 1, callback); 
+    }
+  ], function(error) {
+    if (error) {
+      winston.error("Delete photoset "+photoset.title._content+" photos.", error.toString());
+    }
+    callback(null);
+  });  
 };
 
 var deletePhoto = module.exports.deletePhoto = function(flickrApi, photoset, photo, callback) { 
