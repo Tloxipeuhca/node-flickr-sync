@@ -17,6 +17,7 @@
     "parallelUploadDirectories": 1,
     "parallelUploadPhotos": 1,
     "removeDuplicated": true,
+    "tags": [],
     "trashAlbumName": "Trash",
     "updateTags": true
   },

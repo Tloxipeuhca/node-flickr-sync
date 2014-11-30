@@ -77,6 +77,7 @@ node src/sync.js argConf.json argToken.json
   * photos.excluded.forceIncludedDirectories: array of included directories ;
   * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories ;
   * photos.remove duplicated : boolean to remove duplicated photos from same photoset ;
+  * photos.tags : array of string with all tags to add to each photo in folder and subolders ;
   * photos.trashAlbumName : name of the album who deleted photos are copied ;
   * photos.updateTags: boolean to update tags.
 
@@ -85,4 +86,4 @@ node src/sync.js argConf.json argToken.json
   * isPublic: boolean to set the photo permission to public ;
   * isFriend: boolean to set the photo permission to friend ;
   * isFamily: boolean to set the photo permission to family ;
-  * tags: an array of string with all tags to add to each photo.
+  * tags: array of string with all tags to add to each photo in folder and subolders.

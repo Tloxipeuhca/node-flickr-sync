@@ -23,9 +23,9 @@ module.exports = function(flickrApi, dirPath, filePaths, callback) {
           tags: fileInfo.tags.join(' '),
           photo: fileInfo.path,
           description: JSON.stringify(_.pick(fileInfo, 'relativePath')),
-          is_public: conf.photos.isPublic, 
-          is_friend: conf.photos.isFriend, 
-          is_family: conf.photos.isFamily
+          is_public: fileInfo.isPublic, 
+          is_friend: fileInfo.isFriend, 
+          is_family: fileInfo.isFamily
         });
       });
       var clonedPhotos = _.clone(photos);

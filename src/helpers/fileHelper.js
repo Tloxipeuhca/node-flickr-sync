@@ -74,6 +74,9 @@ module.exports.getFileInfos = function(dirPath, filePath) {
   });
 
   var specificConf = getRecursivelyConf(dirPath, filePath);
+  if (conf.photos.tags) {
+    tags.push(conf.photos.tags);
+  }
   if (specificConf.tags) {
     tags.push(specificConf.tags);
   }
