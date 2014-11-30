@@ -1,6 +1,7 @@
 # node-flickr-sync
 
 A node.js app to sync local photos with flickr.
+You can check the result on [my flickr](https://www.flickr.com/photos/129434165@N03).
 
 ## Features
 
@@ -11,9 +12,14 @@ A node.js app to sync local photos with flickr.
   5. Each folder name would be split by the char '-' to get a collection of tags ;
   6. You can configure the access rules to your photos ;
   7. You can exclude directories to sync ;
-  8. A default conf to try the app, you will upload the current photos (from directory ./photos) to your flick ;
+  8. A default conf to try the app, you will upload the attached photos (directory ./photos) to your flick ;
   9. Continue upload process after an upload error occur ;
-  10. Add an application launcher for windows, double click on the sync.bat.
+  10. Add an application launcher for windows, double click on the sync.bat; 
+  11. Update photo permissions if config file change ;
+  12. Update photo tags if needed (creating or updating subfolders) ;
+  13. Remove duplicated photos from same photoset ;
+  14. Each photo who are deleted is copied in an album named "Trash" ; 
+  15. You can add to each folder a specific conf to manage permissions and tags. Add a directory '.sync' and put inside a conf file named 'flickr.json'.
 
 ## Donation
 
@@ -54,16 +60,30 @@ node src/sync.js argConf.json argToken.json
 
 ## Configuration
 
+### Scope: all project
+
   * photos.path: the path to photos directory ;
   * photos.extensions: the files which you can upload to flickr ;
   * photos.isPublic: boolean to set the photo permission to public ;
   * photos.isFriend: boolean to set the photo permission to friend ;
   * photos.isFamily: boolean to set the photo permission to family ;
   * photos.parallelUpdatePerms: number of photos who are parallely updated ;
+  * photos.parallelUpdateTags: number of photos who are parallely updated ;
   * photos.parallelUploadDirectories: number of directories who are parallely uploaded ;
   * photos.parallelUploadPhotos: number of photos who are parallely uploaded (from the same directory) ;
   * photos.excluded.after: string to exclude all directories who the directory name is after this param (alphabetically) ;
   * photos.excluded.before: string to exclude all directories who the directory name is before this param (alphabetically) ; 
   * photos.excluded.forceExcludedDirectories: array of excluded directories ;
   * photos.excluded.forceIncludedDirectories: array of included directories ;
-  * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories.  
+  * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories ;
+  * photos.remove duplicated : boolean to remove duplicated photos from same photoset ;
+  * photos.tags : array of string with all tags to add to each photo in folder and subolders ;
+  * photos.trashAlbumName : name of the album who deleted photos are copied ;
+  * photos.updateTags: boolean to update tags.
+
+### Scope: current folder
+
+  * isPublic: boolean to set the photo permission to public ;
+  * isFriend: boolean to set the photo permission to friend ;
+  * isFamily: boolean to set the photo permission to family ;
+  * tags: array of string with all tags to add to each photo in folder and subolders.

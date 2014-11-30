@@ -3,3 +3,6 @@ argToken.json
 app.log
 photos
 errors.txt
+yannickToken.json
+yannickConf.json
+src/test.js

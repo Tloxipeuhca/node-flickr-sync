@@ -1,7 +1,8 @@
-var _ = require('lodash'),
- conf = require('./confHelper'),
-   fs = require('fs'),
- path = require('path');
+var    _ = require('lodash'),
+    conf = require('./confHelper'),
+      fs = require('fs'),
+    path = require('path'),
+ winston = require('winston');
 
 module.exports.getFiles = function(dirPath) {
   var files = [];
@@ -72,13 +73,44 @@ module.exports.getFileInfos = function(dirPath, filePath) {
     tags.push(formatArray(directory.split(' - ')));
   });
 
+  var specificConf = getRecursivelyConf(dirPath, filePath);
+  if (conf.photos.tags) {
+    tags.push(conf.photos.tags);
+  }
+  if (specificConf.tags) {
+    tags.push(specificConf.tags);
+  }
+
   return {
     path: filePath,
     relativePath: filePath.replace(path.join(dirPath, '..'), '.'),
     name: path.basename(filePath),
     nameWithoutExt: path.basename(filePath, path.extname(filePath)),
-    tags: formatTags(_.flatten(tags))
+    _tags: _.flatten(tags),
+    tags: formatTags(_.flatten(tags)),
+    isPublic: specificConf.hasOwnProperty("isPublic") ? specificConf.isPublic : conf.photos.isPublic, 
+    isFriend: specificConf.hasOwnProperty("isFriend") ? specificConf.isFriend : conf.photos.isFriend, 
+    isFamily: specificConf.hasOwnProperty("isFamily") ? specificConf.isFamily : conf.photos.isFamily 
   };
+};
+
+var getRecursivelyConf = module.exports.getRecursivelyConf = function(dirPath, filePath) {
+  var currentPath = path.resolve(filePath, '..').toLowerCase();
+  var loop = true;
+  while(loop) {
+    var confPath = path.resolve(currentPath, '.sync', 'flickr.json');
+    if (fs.existsSync(confPath)) {
+      try {
+        return require(confPath);
+      }
+      catch(e) {
+        winston.error('Can\'t load conf file '+confPath, e.toString());
+      }
+    }
+    loop = dirPath.toLowerCase() !== currentPath;
+    currentPath = path.resolve(currentPath, '..').toLowerCase();
+  }
+  return {};
 };
 
 module.exports.applyExclusionRules = function(directories) {

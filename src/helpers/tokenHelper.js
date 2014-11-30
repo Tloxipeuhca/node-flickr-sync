@@ -1,20 +1,25 @@
 var    _ = require('lodash'), 
-    path = require('path');
+appToken = require('../../app.json'),
+    conf = require('./confHelper'),
+      fs = require('fs'),
+getToken = require('../lib/getToken'),
+    path = require('path'),
+ winston = require('winston');
 
-var token = null;
-try {
-  token = require(path.resolve('token.json'));
-}
-catch(e) { }
+module.exports.init = function(callback) {
+  try {
+    var tokenPath = path.resolve('token.json');
+    if (process.argv[3]) {
+      tokenPath = path.resolve(process.argv[3]);
+    }
 
-try {
-  if (process.argv[3]) {
-    var confToken = require(path.resolve(process.argv[3]));
-    token = _.extend(token || {}, confToken);
+    if (fs.existsSync(tokenPath)) {
+      return callback(null, require(tokenPath));
+    }
+
+    getToken(appToken, "delete", tokenPath, callback);  
   }
-}
-catch(e) {
-  console.log('Your specific token file can\'t be loaded: ', e);
-}
-
-module.exports = token;
+  catch(e) { 
+    callback('Error while loading token file, '+e.toString());
+  }
+};

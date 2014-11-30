@@ -1,8 +1,8 @@
-var  async = require('async'),
-      conf = require('../helpers/confHelper'),
-    Flickr = require("flickrapi"), 
-      path = require('path'),
-     token = require('../helpers/tokenHelper');
+var        async = require('async'),
+            conf = require('../helpers/confHelper'),
+          Flickr = require("flickrapi"), 
+            path = require('path'),
+     tokenHelper = require('../helpers/tokenHelper');
 
 var uploadOptions = {
   photos: [{
@@ -26,6 +26,9 @@ var uploadOptions = {
 var _Flickr = null;
 async.waterfall([
   function(next) {
+    tokenHelper.init(next);
+  },
+  function(token, next) {
     Flickr.authenticate(token, next);
   },
   function(flickr, next) {

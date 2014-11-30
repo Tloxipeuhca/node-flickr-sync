@@ -22,7 +22,7 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
       var results = _.where(photosets.photoset, {'title': {'_content': path.basename(dirPath)}});
       // New photoset, upload photos
       if (results.length === 0) {
-        winston.info("Create photoset", JSON.stringify({"name": path.basename(dirPath)}));
+        //winston.info("Create photoset", JSON.stringify({"name": path.basename(dirPath)}));
         return photoSetManager.createPhotosetAndUploadPhotos(flickrApi, path.basename(dirPath), dirPath, files, next);
       }
       // Sync existing photoSet
@@ -39,8 +39,9 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
     },
     function(photos, next) {
       // Upload new photos
-      var    newPhotos = [],
-        existingPhotos = [];
+      var     newPhotos = [],
+         existingPhotos = [],
+        duplicatePhotos = [];
       _.each(files, function(file) {
         var fileName = path.basename(file, path.extname(file));
         var results = _.where(photos, {'title': fileName});
@@ -48,37 +49,106 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
           newPhotos.push(file);
         }
         else {
-          existingPhotos.push(results[0]);
+          results[0].path = file;
+          existingPhotos.push(results.shift());
+          duplicatePhotos.push(results);
         }
       });
 
       photoSetManager.uploadPhotosToPhotoset(flickrApi, photoset, dirPath, newPhotos, function(error, results) {
-        return next(error, existingPhotos);
+        return next(error, existingPhotos, _.flatten(duplicatePhotos));
       });
     },
-    function(existingPhotos, next) {
+    function(existingPhotos, duplicatePhotos, next) {
       // Update photos perms if needed
       var tasks = [];
-      var photosConf = conf.photos;
       _.each(existingPhotos, function(photo) {
-        if (photo.ispublic !== photosConf.isPublic ||
-            photo.isfriend !== photosConf.isFriend ||
-            photo.isfamily !== photosConf.isFamily) {
-          winston.info("Update photo", JSON.stringify(photo));
+        var photoConf = fileHelper.getFileInfos(dirPath, photo.path);
+        if (photo.ispublic !== photoConf.isPublic ||
+            photo.isfriend !== photoConf.isFriend ||
+            photo.isfamily !== photoConf.isFamily) {
+          winston.info("Update photo perms", JSON.stringify(photo));
           tasks.push(
             function(parallelCallback) {
-              flickrApi.photos.setPerms({"photo_id": photo.id, "is_public": photosConf.isPublic, "is_friend": photosConf.isFriend, "is_family": photosConf.isFamily}, parallelCallback)
+              flickrApi.photos.setPerms({"photo_id": photo.id, "is_public": photoConf.isPublic, "is_friend": photoConf.isFriend, "is_family": photoConf.isFamily}, parallelCallback);
             }
           );
         }
       });
-      async.parallelLimit(tasks, photosConf.parallelUpdatePerms || 1, function(error) {
-        return next(error, existingPhotos);
+      async.parallelLimit(tasks, conf.photos.parallelUpdatePerms || 1, function(error) {
+        return next(error, existingPhotos, duplicatePhotos);
       }); 
     },
-    function(existingPhotos, next) {
+    function(existingPhotos, duplicatePhotos, next) {
+      if (!conf.photos.updateTags) {
+        return next(null, existingPhotos, duplicatePhotos);
+      }
+
       // Update photos tags
-      return next();
+      var tasks = [];
+      var photosConf = conf.photos;
+      _.each(existingPhotos, function(photo) { 
+        tasks.push(
+          function(parallelCallback) {
+            updatePhotoTags(flickrApi, photo, photo.path, dirPath, parallelCallback);
+          }
+        );
+      });
+      async.parallelLimit(tasks, photosConf.parallelUpdateTags || 1, function(error, results) {
+        return next(error, results, duplicatePhotos);
+      }); 
+    }, 
+    function(existingPhotos, duplicatePhotos, next) {
+      if (!conf.photos.removeDuplicated || duplicatePhotos.length === 0) {
+        return next(null);
+      }
+
+      // Remove duplicated photos
+      winston.info("Duplicated photos", JSON.stringify(duplicatePhotos));
+      var tasks = [];
+      _.each(duplicatePhotos, function(photo) { 
+        tasks.push(
+          function(parallelCallback) {
+            photoSetManager.deletePhoto(flickrApi, photoset, photo, parallelCallback);
+          }
+        );
+      });
+      async.parallelLimit(tasks, 1, function(error, results) {
+        return next(null);
+      }); 
     }
   ], callback);
 };
+
+var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photo, filePath, dirPath, callback) {
+  async.waterfall([
+    function(next) {
+      flickrApi.photos.getInfo({"photo_id": photo.id}, function(error, result) {
+        if (error) {
+          return next(error, photo);
+        }
+        return next(null, result.photo);
+      });
+    },
+    function(photoInfo, next) {
+      var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
+      var photoTags = _.pluck(photoInfo.tags.tag, "raw").sort();
+      var fileTags = fileInfo._tags.sort();
+      var isEqual = _.isEqual(photoTags, fileTags);
+      winston.debug("Photo tags", JSON.stringify({"id": photo.id, "photo": photoTags, "file": fileTags, "isEqual": isEqual}));
+
+      if (isEqual) {
+        return next(null, photo);
+      }
+      winston.info("Update photo tags", JSON.stringify({"id": photo.id}));
+      flickrApi.photos.setTags({"photo_id": photo.id, "tags": fileInfo.tags}, function(error, result) {
+        next(error, photo);
+      });
+    }
+  ], function(error, photo) {
+    if (error) {
+      winston.warn("Update photo tags", e.toString());
+    }
+    callback(null, photo);
+  });
+}

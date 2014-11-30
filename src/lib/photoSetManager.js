@@ -3,13 +3,16 @@ var        _ = require('lodash'),
         conf = require('../helpers/confHelper'),
   fileHelper = require('../helpers/fileHelper'),
           fs = require('fs'),
+   getPhotosetPhotos = require('./getPhotosetPhotos'),
         path = require('path'),
+ tokenHelper = require('../helpers/tokenHelper'),
 uploadPhotos = require('./uploadPhotos'),
      winston = require('winston');
 
 var createPhotosetAndUploadPhotos = module.exports.createPhotosetAndUploadPhotos = function(flickrApi, photoSetName, dirPath, files, callback) {
   async.waterfall([
     function(next) {
+      winston.info("Create photoset", JSON.stringify({"name": photoSetName}));
       if (files.length < 1) {
         return next('One photo is required to create a photoset.');
       }
@@ -68,4 +71,97 @@ var uploadPhotosToPhotoset = module.exports.uploadPhotosToPhotoset = function(fl
   });
   var parallelUpload = (conf && conf.photos) ? conf.photos.parallelUploadPhotos : 1;
   async.parallelLimit(tasks, parallelUpload, callback); 
+};
+
+var deletePhotoset = module.exports.deletePhotoset = function(flickrApi, photoset, callback) { 
+  async.waterfall([
+    function(next) {
+       tokenHelper.init(next);
+    },
+    function(token, next) {
+      getPhotosetPhotos(flickrApi, photoset.id, next);
+    },
+    function(photos, next) {
+      var tasks = [];
+      _.each(photos, function(photo) {
+        tasks.push(
+          function(parallelCallback) {
+            deletePhoto(flickrApi, photoset, photo, function(error) {
+              parallelCallback();
+            });
+          }
+        );
+      });
+      async.parallelLimit(tasks, 1, next); 
+    }
+  ], function(error) {
+    if (error) {
+      winston.error("Delete photoset "+photoset.title._content+" photos.", error.toString());
+    }
+    callback(null);
+  });  
+};
+
+var deletePhoto = module.exports.deletePhoto = function(flickrApi, photoset, photo, callback) { 
+  winston.info("Delete photo", JSON.stringify({"photoset": { "id": photoset.id, "title": photoset.title._content}, "photo": photo.id}));
+  if (photoset.title._content === conf.photos.trashAlbumName) {
+    winston.warn("Delete photo, you can't delete duplicated photos from "+conf.photos.trashAlbumName);
+    return callback(null);
+  }
+  async.waterfall([
+    function(next) {
+       tokenHelper.init(next);
+    },
+    function(token, next) {
+      flickrApi.photosets.getList({"user_id": token.user_id, "perpage": 100000}, function(error, result) {
+        if (error) {
+          return next(error);
+        }
+        next(null, result.photosets.photoset);
+      })
+    },
+    function(photosets, next) {
+      // Copy photo to trash
+      var results = _.where(photosets, {'title': {'_content': conf.photos.trashAlbumName}});
+      if (results.length === 0) {
+        flickrApi.photosets.create({'title': conf.photos.trashAlbumName, 'primary_photo_id': photo.id}, function(error, photosets) {
+          if (error) {
+            return next("Create photoset "+photoSetName);
+          }
+          return next(null);
+        });
+      }
+      else {
+        flickrApi.photosets.addPhoto({'photoset_id': results[0].id, 'photo_id': photo.id}, function(error, result) {
+          if (error) {
+            return next("Add photo "+photo.id+" to photoset "+results[0].id+".", error.toString());
+          }
+          return next(null);
+        });      
+      }
+    },
+    function(next) {
+      // Add meta
+      flickrApi.photos.setMeta({'photo_id': photo.id, "description": JSON.stringify({"from": {"id": photoset.id, "title": photoset.title._content}})}, function(error, result) {
+        if (error) {
+          return next("Add meta to photo "+photo.id, error.toString());
+        }
+        next(null);
+      });
+    },
+    function(next) {
+      // Remove photo from current photoset
+      flickrApi.photosets.removePhoto({'photoset_id': photoset.id, 'photo_id': photo.id}, function(error, result) {
+        if (error) {
+          return next("Remove photo "+photo.id+" from photoset "+photoset.id, error.toString());
+        }
+        next(null);
+      });
+    }
+  ], function(error) {
+    if (error) {
+      winston.error("Delete photo "+photo.id+" from "+photoset.title._content+". ", error.toString());
+    }
+    callback(null);
+  });  
 };
