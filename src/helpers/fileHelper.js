@@ -98,7 +98,7 @@ var getRecursivelyConf = module.exports.getRecursivelyConf = function(dirPath, f
   var currentPath = path.resolve(filePath, '..').toLowerCase();
   var loop = true;
   while(loop) {
-    var confPath = path.resolve(currentPath, '.sync', 'conf.json');
+    var confPath = path.resolve(currentPath, '.sync', 'flickr.json');
     if (fs.existsSync(confPath)) {
       try {
         return require(confPath);

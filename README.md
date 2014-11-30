@@ -19,7 +19,7 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
   12. Update photo tags if needed (creating or updating subfolders) ;
   13. Remove duplicated photos from same photoset ;
   14. Each photo who are deleted is copied in an album named "Trash" ; 
-  15. You can add to each folder a specific conf to manage permissions and tags.
+  15. You can add to each folder a specific conf to manage permissions and tags. Add a directory '.sync' and put inside a conf file named 'flickr.json'.
 
 ## Donation
 
