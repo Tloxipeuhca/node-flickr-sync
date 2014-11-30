@@ -67,7 +67,6 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         if (photo.ispublic !== photoConf.isPublic ||
             photo.isfriend !== photoConf.isFriend ||
             photo.isfamily !== photoConf.isFamily) {
-          console.log(photoConf)
           winston.info("Update photo perms", JSON.stringify(photo));
           tasks.push(
             function(parallelCallback) {
