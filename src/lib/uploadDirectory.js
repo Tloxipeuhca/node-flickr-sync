@@ -64,9 +64,19 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       var tasks = [];
       _.each(existingPhotos, function(photo) {
         var photoConf = fileHelper.getFileInfos(dirPath, photo.path);
-        if (photo.ispublic !== photoConf.isPublic ||
-            photo.isfriend !== photoConf.isFriend ||
-            photo.isfamily !== photoConf.isFamily) {
+        var isEqual = !(photo.ispublic !== photoConf.isPublic ||
+                       photo.isfriend !== photoConf.isFriend ||
+                       photo.isfamily !== photoConf.isFriend);
+        winston.debug("Photo perms", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": {
+          "isPublic": photo.ispublic,
+          "isFriend": photo.isfriend,
+          "isFamily": photo.isfamily
+        }, "file": {
+          "isPublic": photoConf.isPublic,
+          "isFriend": photoConf.isFriend,
+          "isFamily": photoConf.isFriend
+        }}));
+        if (!isEqual) {
           winston.info("Update photo perms", JSON.stringify(photo));
           tasks.push(
             function(parallelCallback) {
