@@ -10,18 +10,6 @@ var             _ = require('lodash'),
   uploadDirectory = require('./lib/uploadDirectory'),
           winston = require('winston');
 
-// How to execute
-// arguments
-//   argv2 path to photos conf json file
-//   argv3 path to token json file
-//   argv4 photoset name
-// scripts
-//   node src/removePhotoset.js conf.json token.json photosetName
-
-if (!process.argv[4]) {
-  winston.warn('Remove photoset, photoset name is undefined');
-}
-
 async.waterfall([
   function(next) {
     tokenHelper.init(next);
@@ -33,7 +21,7 @@ async.waterfall([
     });
   },
   function(flickrApi, token, next) {
-    winston.info('Remove photoset by name '+process.argv[4]);
+    winston.info('Empty the trash photoset \''+conf.photos.trashAlbumName+'\'');
     // Get all photosets
     flickrApi.photosets.getList({"user_id": token.user_id, "perpage": 100000}, function(error, result) {
       if (error) {
@@ -44,11 +32,11 @@ async.waterfall([
   },
   function(flickrApi, photosets, next) {
     winston.debug('Photosets', JSON.stringify(photosets));
-    var results = _.where(photosets, {'title': {'_content': process.argv[4]}});
+    var results = _.where(photosets, {'title': {'_content': conf.photos.trashAlbumName}});
     if (results.length === 0) {
-      return next('Remove photoset by name \''+process.argv[4]+'\' , photoset doesn\'t exist');
+      return next('Delete trash photoset \''+conf.photos.trashAlbumName+'\' doesn\'t exist');
     }
-    photoSetManager.removePhotoset(flickrApi, results[0], next);
+    photoSetManager.deletePhotoset(flickrApi, results[0], next);
   }
 ], function(error, result) {
   if (error) {

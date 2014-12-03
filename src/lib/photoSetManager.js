@@ -73,7 +73,12 @@ var uploadPhotosToPhotoset = module.exports.uploadPhotosToPhotoset = function(fl
   async.parallelLimit(tasks, parallelUpload, callback); 
 };
 
-var deletePhotoset = module.exports.deletePhotoset = function(flickrApi, photoset, callback) { 
+var removePhotoset = module.exports.removePhotoset = function(flickrApi, photoset, callback) { 
+  winston.info("Remove photoset "+photoset.title._content);
+  if (photoset.title._content === conf.photos.duplicatedAlbumName) {
+    winston.warn("Remove photoset, you can't remove this photoset \'"+conf.photos.duplicatedAlbumName+'\'');
+    return callback(null);
+  }
   async.waterfall([
     function(next) {
        tokenHelper.init(next);
@@ -86,7 +91,7 @@ var deletePhotoset = module.exports.deletePhotoset = function(flickrApi, photose
       _.each(photos, function(photo) {
         tasks.push(
           function(parallelCallback) {
-            deletePhoto(flickrApi, photoset, photo, function(error) {
+            removePhoto(flickrApi, photoset, photo, function(error) {
               parallelCallback();
             });
           }
@@ -96,16 +101,16 @@ var deletePhotoset = module.exports.deletePhotoset = function(flickrApi, photose
     }
   ], function(error) {
     if (error) {
-      winston.error("Delete photoset "+photoset.title._content+" photos.", error.toString());
+      winston.error("Remove photoset "+photoset.title._content+" photos.", error.toString());
     }
     callback(null);
   });  
 };
 
-var deletePhoto = module.exports.deletePhoto = function(flickrApi, photoset, photo, callback) { 
-  winston.info("Delete photo", JSON.stringify({"photoset": { "id": photoset.id, "title": photoset.title._content}, "photo": photo.id}));
+var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, photo, callback) { 
+  winston.info("Remove photo", JSON.stringify({"photoset": { "id": photoset.id, "title": photoset.title._content}, "photo": photo.id}));
   if (photoset.title._content === conf.photos.duplicatedAlbumName) {
-    winston.warn("Delete photo, you can't delete duplicated photos from "+conf.photos.duplicatedAlbumName);
+    winston.warn("Remove photo, you can't remove photo from this photoset \'"+conf.photos.duplicatedAlbumName+'\'');
     return callback(null);
   }
   async.waterfall([
@@ -160,8 +165,56 @@ var deletePhoto = module.exports.deletePhoto = function(flickrApi, photoset, pho
     }
   ], function(error) {
     if (error) {
-      winston.error("Delete photo "+photo.id+" from "+photoset.title._content+". ", error.toString());
+      winston.error("Remove photo "+photo.id+" from "+photoset.title._content+". ", error.toString());
     }
     callback(null);
   });  
+};
+
+var deletePhotoset = module.exports.deletePhotoset = function(flickrApi, photoset, callback) { 
+  winston.info("Delete photoset "+photoset.title._content);
+  if (photoset.title._content !== conf.photos.trashAlbumName) {
+    winston.warn("Delete photoset, you can't only delete photos from \'"+conf.photos.trashAlbumName+'\' photoset');
+    return callback(null);
+  }
+  async.waterfall([
+    function(next) {
+       tokenHelper.init(next);
+    },
+    function(token, next) {
+      getPhotosetPhotos(flickrApi, photoset.id, next);
+    },
+    function(photos, next) {
+      var tasks = [];
+      _.each(photos, function(photo) {
+        tasks.push(
+          function(parallelCallback) {
+            deletePhoto(flickrApi, photoset, photo, function(error) {
+              parallelCallback();
+            });
+          }
+        );
+      });
+      async.parallelLimit(tasks, 1, next); 
+    }
+  ], function(error) {
+    if (error) {
+      winston.error("Delete photoset "+photoset.title._content+" photos.", error.toString());
+    }
+    callback(null);
+  });
+};
+
+var deletePhoto = module.exports.deletePhoto = function(flickrApi, photoset, photo, callback) { 
+  winston.info("Delete photo "+photo.id);
+  if (photoset.title._content !== conf.photos.trashAlbumName) {
+    winston.warn("Delete photo, you can't only delete photo from \'"+conf.photos.trashAlbumName+'\' photoset');
+    return callback(null);
+  }
+  flickrApi.photos.delete({'photo_id': photo.id}, function(error, result) {
+    if (error) {
+      winston.error('Delete photo', error.toString());
+    }
+    callback(null, result);
+  });
 };
