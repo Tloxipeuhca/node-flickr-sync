@@ -19,7 +19,10 @@ var             _ = require('lodash'),
 //   node src/removePhotoset.js conf.json token.json photosetName
 
 if (!process.argv[4]) {
-  winston.warn('Remove photoset, photoset name is undefined');
+  return winston.warn('Remove photoset, photoset name is undefined');
+}
+if (_.contains(_.pluck(conf.photos.trash, 'name'), process.argv[4])) {
+  return winston.warn('Remove photoset, you can\'t remove these pohotosets', JSON.stringify(_.pluck(conf.photos.trash, , 'name')));
 }
 
 async.waterfall([
@@ -43,10 +46,10 @@ async.waterfall([
     });
   },
   function(flickrApi, photosets, next) {
-    winston.debug('Photosets', JSON.stringify(photosets));
+    winston.debug('Remove photosets content', JSON.stringify(photosets));
     var results = _.where(photosets, {'title': {'_content': process.argv[4]}});
     if (results.length === 0) {
-      return next('Remove photoset by name \''+process.argv[4]+'\' , photoset doesn\'t exist');
+      return next('Remove photoset, \''+process.argv[4]+'\' doesn\'t exist');
     }
     photoSetManager.removePhotoset(flickrApi, results[0], next);
   }

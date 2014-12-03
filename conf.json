@@ -1,7 +1,6 @@
 {
   "photos": {
     "path": ".\\photos_10%" ,
-    "duplicatedAlbumName": "Duplicated",
     "excluded": {
       "after": null,
       "before": null,
@@ -19,7 +18,15 @@
     "parallelUploadPhotos": 1,
     "removeDuplicated": true,
     "tags": [],
-    "trashAlbumName": "Trash",
+    "trash": [{
+        "type": "duplicated",
+        "name": "DuplicatedTrash"
+      },
+      {
+        "type": "sync",
+        "name": "Trash"
+      }
+    ],
     "updateTags": true
   },
   "winston": {
