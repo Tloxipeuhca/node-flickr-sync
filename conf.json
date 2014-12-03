@@ -1,6 +1,7 @@
 {
   "photos": {
     "path": ".\\photos_10%" ,
+    "duplicatedAlbumName": "Duplicated",
     "excluded": {
       "after": null,
       "before": null,

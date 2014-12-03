@@ -67,7 +67,7 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         var isEqual = !(photo.ispublic !== photoConf.isPublic ||
                        photo.isfriend !== photoConf.isFriend ||
                        photo.isfamily !== photoConf.isFriend);
-        winston.debug("Photo perms", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": {
+        winston.debug("Check photo perms", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": {
           "isPublic": photo.ispublic,
           "isFriend": photo.isfriend,
           "isFamily": photo.isfamily
@@ -77,10 +77,11 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
           "isFamily": photoConf.isFriend
         }}));
         if (!isEqual) {
-          winston.info("Update photo perms", JSON.stringify(photo));
+          var perms = {"photo_id": photo.id, "is_public": photoConf.isPublic, "is_friend": photoConf.isFriend, "is_family": photoConf.isFamily};
+          winston.info("Update photo perms", JSON.stringify(perms));
           tasks.push(
             function(parallelCallback) {
-              flickrApi.photos.setPerms({"photo_id": photo.id, "is_public": photoConf.isPublic, "is_friend": photoConf.isFriend, "is_family": photoConf.isFamily}, parallelCallback);
+              flickrApi.photos.setPerms(perms, parallelCallback);
             }
           );
         }
@@ -114,7 +115,7 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       }
 
       // Remove duplicated photos
-      winston.info("Duplicated photos", JSON.stringify(duplicatePhotos));
+      winston.info("Remove duplicated photos", JSON.stringify(duplicatePhotos));
       var tasks = [];
       _.each(duplicatePhotos, function(photo) { 
         tasks.push(
@@ -145,7 +146,7 @@ var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photo
       var photoTags = _.pluck(photoInfo.tags.tag, "raw").sort();
       var fileTags = fileInfo._tags.sort();
       var isEqual = _.isEqual(photoTags, fileTags);
-      winston.debug("Photo tags", JSON.stringify({"id": photo.id, "photo": photoTags, "file": fileTags, "isEqual": isEqual}));
+      winston.debug("Check photo tags", JSON.stringify({"id": photo.id, "photo": photoTags, "file": fileTags, "isEqual": isEqual}));
 
       if (isEqual) {
         return next(null, photo);

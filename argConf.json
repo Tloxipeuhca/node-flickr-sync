@@ -2,7 +2,7 @@
   "path": "\\\\192.168.0.123\\media\\Pictures",
   "excluded": {
     "after": null,
-    "before": null,
+    "before": "w",
     "forceExcludedDirectories": [
       "Divers - 2014 - Maëline - 1 mois", 
       "Anniversaire - 2013 - 30 ans - Elodie",

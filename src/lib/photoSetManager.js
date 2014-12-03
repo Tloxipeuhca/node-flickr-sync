@@ -104,8 +104,8 @@ var deletePhotoset = module.exports.deletePhotoset = function(flickrApi, photose
 
 var deletePhoto = module.exports.deletePhoto = function(flickrApi, photoset, photo, callback) { 
   winston.info("Delete photo", JSON.stringify({"photoset": { "id": photoset.id, "title": photoset.title._content}, "photo": photo.id}));
-  if (photoset.title._content === conf.photos.trashAlbumName) {
-    winston.warn("Delete photo, you can't delete duplicated photos from "+conf.photos.trashAlbumName);
+  if (photoset.title._content === conf.photos.duplicatedAlbumName) {
+    winston.warn("Delete photo, you can't delete duplicated photos from "+conf.photos.duplicatedAlbumName);
     return callback(null);
   }
   async.waterfall([
@@ -122,9 +122,9 @@ var deletePhoto = module.exports.deletePhoto = function(flickrApi, photoset, pho
     },
     function(photosets, next) {
       // Copy photo to trash
-      var results = _.where(photosets, {'title': {'_content': conf.photos.trashAlbumName}});
+      var results = _.where(photosets, {'title': {'_content': conf.photos.duplicatedAlbumName}});
       if (results.length === 0) {
-        flickrApi.photosets.create({'title': conf.photos.trashAlbumName, 'primary_photo_id': photo.id}, function(error, photosets) {
+        flickrApi.photosets.create({'title': conf.photos.duplicatedAlbumName, 'primary_photo_id': photo.id}, function(error, photosets) {
           if (error) {
             return next("Create photoset "+photoSetName);
           }
