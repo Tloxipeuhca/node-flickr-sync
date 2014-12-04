@@ -24,7 +24,7 @@
       },
       {
         "type": "sync",
-        "name": "Trash"
+        "name": "SyncTrash"
       }
     ],
     "updateTags": true
