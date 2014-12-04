@@ -73,7 +73,7 @@ var uploadPhotosToPhotoset = module.exports.uploadPhotosToPhotoset = function(fl
   async.parallelLimit(tasks, parallelUpload, callback); 
 };
 
-var removePhotoset = module.exports.removePhotoset = function(flickrApi, photoset, callback) { 
+var removePhotoset = module.exports.removePhotoset = function(flickrApi, photoset, trash, callback) { 
   winston.info("Remove photoset "+photoset.title._content);
   if (_.contains(_.pluck(conf.photos.trash, 'name'), photoset.title._content)) {
     winston.warn("Remove photoset, you can't remove these photosets", JSON.stringify(_.pluck(conf.photos.trash, 'name')));
@@ -91,7 +91,7 @@ var removePhotoset = module.exports.removePhotoset = function(flickrApi, photose
       _.each(photos, function(photo) {
         tasks.push(
           function(parallelCallback) {
-            removePhoto(flickrApi, photoset, photo, function(error) {
+            removePhoto(flickrApi, photoset, photo, trash, function(error) {
               parallelCallback();
             });
           }
@@ -107,7 +107,7 @@ var removePhotoset = module.exports.removePhotoset = function(flickrApi, photose
   });  
 };
 
-var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, photo, callback) { 
+var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, photo, trash, callback) { 
   winston.info("Remove photo", JSON.stringify({"photoset": { "id": photoset.id, "title": photoset.title._content}, "photo": photo.id}));
   if (_.contains(_.pluck(conf.photos.trash, 'name'), photoset.title._content)) {
     winston.warn("Remove photo, you can't remove photo from these photosets", JSON.stringify(_.pluck(conf.photos.trash, 'name')));
@@ -127,11 +127,10 @@ var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, pho
     },
     function(photosets, next) {
       // Copy photo to duplicated photoset
-      var duplicatedPhotoset = _.find(conf.photos.trash, {"type": "duplicated"});
-      var results = _.where(photosets, {'title': {'_content': duplicatedPhotoset.name}});
+      var results = _.where(photosets, {'title': {'_content': trash.name}});
       if (results.length === 0) {
-        winston.info("Remove photo, create photoset", JSON.stringify({"title": duplicatedPhotoset.name}));
-        flickrApi.photosets.create({'title': duplicatedPhotoset.name, 'primary_photo_id': photo.id}, function(error, photosets) {
+        winston.info("Remove photo, create photoset", JSON.stringify({"title": trash.name}));
+        flickrApi.photosets.create({'title': trash.name, 'primary_photo_id': photo.id}, function(error, photosets) {
           if (error) {
             return next("Create photoset "+photoSetName);
           }

@@ -23,6 +23,10 @@
         "name": "DuplicatedTrash"
       },
       {
+        "type": "remove",
+        "name": "RemoveTrash"
+      },
+      {
         "type": "sync",
         "name": "SyncTrash"
       }

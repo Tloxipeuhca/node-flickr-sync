@@ -22,7 +22,7 @@ if (!process.argv[4]) {
   return winston.warn('Delete photoset, photoset name is undefined');
 }
 if (!_.contains(_.pluck(conf.photos.trash, 'name'), process.argv[4])) {
-  return winston.warn('Delete photoset, you can only delete these pohotosets', JSON.stringify(_.pluck(conf.photos.trash, 'name')));
+  return winston.warn('Delete photoset, you can only delete these photosets', JSON.stringify(_.pluck(conf.photos.trash, 'name')));
 }
 
 async.waterfall([

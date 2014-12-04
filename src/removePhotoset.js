@@ -22,7 +22,7 @@ if (!process.argv[4]) {
   return winston.warn('Remove photoset, photoset name is undefined');
 }
 if (_.contains(_.pluck(conf.photos.trash, 'name'), process.argv[4])) {
-  return winston.warn('Remove photoset, you can\'t remove these pohotosets', JSON.stringify(_.pluck(conf.photos.trash, , 'name')));
+  return winston.warn('Remove photoset, you can\'t remove these pohotosets', JSON.stringify(_.pluck(conf.photos.trash, 'name')));
 }
 
 async.waterfall([
@@ -51,7 +51,8 @@ async.waterfall([
     if (results.length === 0) {
       return next('Remove photoset, \''+process.argv[4]+'\' doesn\'t exist');
     }
-    photoSetManager.removePhotoset(flickrApi, results[0], next);
+    var removePhotoset = _.find(conf.photos.trash, {"type": "remove"});
+    photoSetManager.removePhotoset(flickrApi, results[0], removePhotoset, next);
   }
 ], function(error, result) {
   if (error) {
