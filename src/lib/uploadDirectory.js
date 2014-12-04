@@ -120,7 +120,7 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       _.each(duplicatePhotos, function(photo) { 
         tasks.push(
           function(parallelCallback) {
-            photoSetManager.deletePhoto(flickrApi, photoset, photo, parallelCallback);
+            photoSetManager.removePhoto(flickrApi, photoset, photo, parallelCallback);
           }
         );
       });

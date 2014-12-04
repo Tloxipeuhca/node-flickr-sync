@@ -126,11 +126,12 @@ var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, pho
       })
     },
     function(photosets, next) {
-      // Copy photo to trash
-      var duplicatedAlbumName = _.find(conf.photos.trash, {"name": "duplicated"});
-      var results = _.where(photosets, {'title': {'_content': duplicatedAlbumName}});
+      // Copy photo to duplicated photoset
+      var duplicatedPhotoset = _.find(conf.photos.trash, {"type": "duplicated"});
+      var results = _.where(photosets, {'title': {'_content': duplicatedPhotoset.name}});
       if (results.length === 0) {
-        flickrApi.photosets.create({'title': duplicatedAlbumName, 'primary_photo_id': photo.id}, function(error, photosets) {
+        winston.info("Remove photo, create photoset", JSON.stringify({"title": duplicatedPhotoset.name}));
+        flickrApi.photosets.create({'title': duplicatedPhotoset.name, 'primary_photo_id': photo.id}, function(error, photosets) {
           if (error) {
             return next("Create photoset "+photoSetName);
           }
@@ -138,6 +139,7 @@ var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, pho
         });
       }
       else {
+        winston.info("Remove photo, add photo photoset");
         flickrApi.photosets.addPhoto({'photoset_id': results[0].id, 'photo_id': photo.id}, function(error, result) {
           if (error) {
             return next("Add photo "+photo.id+" to photoset "+results[0].id+".", error.toString());
@@ -145,8 +147,8 @@ var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, pho
           return next(null);
         });      
       }
-    },
-    function(next) {
+    }//,
+/*    function(next) {
       // Add meta
       flickrApi.photos.setMeta({'photo_id': photo.id, "description": JSON.stringify({"from": {"id": photoset.id, "title": photoset.title._content}})}, function(error, result) {
         if (error) {
@@ -163,7 +165,7 @@ var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, pho
         }
         next(null);
       });
-    }
+    }*/
   ], function(error) {
     if (error) {
       winston.error("Remove photo "+photo.id+" from "+photoset.title._content+". ", error.toString());
