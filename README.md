@@ -18,8 +18,10 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
   11. Update photo permissions if config file change ;
   12. Update photo tags if needed (creating or updating subfolders) ;
   13. Remove duplicated photos from same photoset ;
-  14. Each photo who are deleted is copied in an album named "Trash" ; 
-  15. You can add to each folder a specific conf to manage permissions and tags. Add a directory '.sync' and put inside a conf file named 'flickr.json'.
+  14. Each photo who is duplicate is copied in an album named "DuplicatedTrash" ; 
+  15. You can add to each folder a specific conf to manage permissions and tags. Add a directory '.sync' and put inside a conf file named 'flickr.json' ;
+  16. New function to remove a photoset, all photos are linked to the trash photoset ;
+  17. New function to delete each photos inside a trash photoset.
 
 ## Donation
 
@@ -78,7 +80,7 @@ node src/sync.js argConf.json argToken.json
   * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories ;
   * photos.remove duplicated : boolean to remove duplicated photos from same photoset ;
   * photos.tags : array of string with all tags to add to each photo in folder and subolders ;
-  * photos.trashAlbumName : name of the album who deleted photos are copied ;
+  * photos.trash : array of trash objects. Each object has two parameters 'type' and 'name' ;
   * photos.updateTags: boolean to update tags.
 
 ### Scope: current folder
