@@ -16,13 +16,13 @@ var             _ = require('lodash'),
 //   argv3 path to token json file
 //   argv4 photoset name
 // scripts
-//   node src/deletePhotoset.js conf.json token.json photosetName
+//   node src/removePhotoset.js conf.json token.json photosetName
 
 if (!process.argv[4]) {
-  return winston.warn('Delete photoset, photoset name is undefined');
+  return winston.warn('Remove photoset, photoset name is undefined');
 }
-if (!_.contains(_.pluck(conf.photos.trash, 'name'), process.argv[4])) {
-  return winston.warn('Delete photoset, you can only delete these photosets', JSON.stringify(_.pluck(conf.photos.trash, 'name')));
+if (_.contains(_.pluck(conf.photos.trash, 'name'), process.argv[4])) {
+  return winston.warn('Remove photoset, you can\'t remove these pohotosets', JSON.stringify(_.pluck(conf.photos.trash, 'name')));
 }
 
 async.waterfall([
@@ -36,7 +36,7 @@ async.waterfall([
     });
   },
   function(flickrApi, token, next) {
-    winston.info('Delete photoset \''+process.argv[4]+'\'');
+    winston.info('Remove photoset by name '+process.argv[4]);
     // Get all photosets
     flickrApi.photosets.getList({"user_id": token.user_id, "perpage": 100000}, function(error, result) {
       if (error) {
@@ -46,12 +46,13 @@ async.waterfall([
     });
   },
   function(flickrApi, photosets, next) {
-    winston.debug('Delete photosets content', JSON.stringify(photosets));
+    winston.debug('Remove photosets content', JSON.stringify(photosets));
     var results = _.where(photosets, {'title': {'_content': process.argv[4]}});
     if (results.length === 0) {
-      return next('Delete photoset \''+process.argv[4]+'\' doesn\'t exist');
+      return next('Remove photoset, \''+process.argv[4]+'\' doesn\'t exist');
     }
-    photoSetManager.deletePhotoset(flickrApi, results[0], next);
+    var removePhotoset = _.find(conf.photos.trash, {"type": "remove"});
+    photoSetManager.removePhotoset(flickrApi, results[0], removePhotoset, next);
   }
 ], function(error, result) {
   if (error) {

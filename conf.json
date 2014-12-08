@@ -18,7 +18,19 @@
     "parallelUploadPhotos": 1,
     "removeDuplicated": true,
     "tags": [],
-    "trashAlbumName": "Trash",
+    "trash": [{
+        "type": "duplicated",
+        "name": "DuplicatedTrash"
+      },
+      {
+        "type": "remove",
+        "name": "RemoveTrash"
+      },
+      {
+        "type": "sync",
+        "name": "SyncTrash"
+      }
+    ],
     "updateTags": true
   },
   "winston": {
