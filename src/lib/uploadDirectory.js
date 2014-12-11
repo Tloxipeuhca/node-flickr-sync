@@ -1,6 +1,7 @@
 var                _ = require('lodash'),
                async = require('async'),
                 conf = require('../helpers/confHelper'),
+       downloadPhoto = require('./downloadPhoto'),
           fileHelper = require('../helpers/fileHelper'),
                   fs = require('fs'),
    getPhotosetPhotos = require('./getPhotosetPhotos'),
@@ -39,14 +40,17 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
     },
     function(photos, next) {
       // Upload new photos
-      var     newPhotos = [],
-         existingPhotos = [],
-        duplicatePhotos = [];
+      var newFlickPhotos = [],
+          newLocalPhotos = [],
+          existingPhotos = [],
+               filesName = [];
+         duplicatePhotos = [];
       _.each(files, function(file) {
         var fileName = path.basename(file, path.extname(file));
+        filesName.push(fileName);
         var results = _.where(photos, {'title': fileName});
         if (results.length === 0) {
-          newPhotos.push(file);
+          newFlickPhotos.push(file);
         }
         else {
           results[0].path = file;
@@ -55,11 +59,18 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         }
       });
 
-      photoSetManager.uploadPhotosToPhotoset(flickrApi, photoset, dirPath, newPhotos, function(error, results) {
-        return next(error, existingPhotos, _.flatten(duplicatePhotos));
+      _.each(photos, function(photo) {
+        if (!_.contains(filesName, photo.title)) {
+          photo.dirPath = dirPath;
+          newLocalPhotos.push(photo);
+        }
+      });
+
+      photoSetManager.uploadPhotosToPhotoset(flickrApi, photoset, dirPath, newFlickPhotos, function(error, results) {
+        return next(error, existingPhotos, _.flatten(duplicatePhotos), newLocalPhotos);
       });
     },
-    function(existingPhotos, duplicatePhotos, next) {
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
       // Update photos perms if needed
       var tasks = [];
       _.each(existingPhotos, function(photo) {
@@ -87,12 +98,12 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         }
       });
       async.parallelLimit(tasks, conf.photos.parallelUpdatePerms || 1, function(error) {
-        return next(error, existingPhotos, duplicatePhotos);
+        return next(error, existingPhotos, duplicatePhotos, newLocalPhotos);
       }); 
     },
-    function(existingPhotos, duplicatePhotos, next) {
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
       if (!conf.photos.updateTags) {
-        return next(null, existingPhotos, duplicatePhotos);
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
       }
 
       // Update photos tags
@@ -106,12 +117,12 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         );
       });
       async.parallelLimit(tasks, photosConf.parallelUpdateTags || 1, function(error, results) {
-        return next(error, results, duplicatePhotos);
+        return next(error, results, duplicatePhotos, newLocalPhotos);
       }); 
     }, 
-    function(existingPhotos, duplicatePhotos, next) {
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
       if (!conf.photos.removeDuplicated || duplicatePhotos.length === 0) {
-        return next(null);
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
       }
 
       // Remove duplicated photos
@@ -126,7 +137,26 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         );
       });
       async.parallelLimit(tasks, 1, function(error, results) {
-        return next(null);
+        return next(error, existingPhotos, results, newLocalPhotos);
+      }); 
+    },
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
+      if (!conf.photos.syncLocal || newLocalPhotos.length === 0) {
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
+      }
+      
+      // Download non existing photos
+      winston.info("Download photos", JSON.stringify(newLocalPhotos));
+      var tasks = [];
+      _.each(newLocalPhotos, function(photo) { 
+        tasks.push(
+          function(parallelCallback) {
+            downloadPhoto(flickrApi, photo, photo.dirPath, parallelCallback);
+          }
+        );
+      });
+      async.parallelLimit(tasks, 1, function(error, results) {
+        return next(error, existingPhotos, duplicatePhotos, results);
       }); 
     }
   ], callback);
@@ -163,4 +193,4 @@ var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photo
     }
     callback(null, photo);
   });
-}
+};

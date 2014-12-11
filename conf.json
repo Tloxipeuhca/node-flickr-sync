@@ -17,6 +17,7 @@
     "parallelUploadDirectories": 1,
     "parallelUploadPhotos": 1,
     "removeDuplicated": true,
+    "syncLocal": true,
     "tags": [],
     "trash": [{
         "type": "duplicated",
