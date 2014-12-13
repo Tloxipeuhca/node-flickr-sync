@@ -1,6 +1,7 @@
 var             _ = require('lodash'),
             async = require('async'),
              conf = require('./helpers/confHelper'),
+downloadDirectory = require('./lib/downloadDirectory'),
        fileHelper = require('./helpers/fileHelper'),
            Flickr = require("flickrapi"), 
                fs = require('fs'),
@@ -37,10 +38,11 @@ async.waterfall([
       if (error) {
         return next(error);
       }
-      next(null, result.photosets);
+      next(null, result.photosets.photoset);
     });
   },
   function(photosets, next) {
+    // Sync directories to flickr
     // Get directories to sync
     var photosPath = path.resolve(conf.photos.path);
     winston.debug('Photosets', JSON.stringify(photosets));
@@ -49,18 +51,51 @@ async.waterfall([
       return next('Dircectory path to sync doesn\'t exist: '+photosPath)
     }
     var directories = fileHelper.getDirectories(photosPath);
+    if (conf.photos.mode !== 'upload' && conf.photos.mode !== 'sync') {
+      return next(null, photosets, directories);
+    }
+
     // Function to exclude directories to sync
-    directories = fileHelper.applyExclusionRules(directories);
-    winston.debug(directories.length + ' directories to sync', JSON.stringify(directories));
+    var filteredDirectories = fileHelper.applyExclusionRules(directories);
+    winston.debug(filteredDirectories.length + ' directories to sync', JSON.stringify(filteredDirectories));
     var tasks = [];
-    _.each(directories, function(directory, parallelCallback) {
+    _.each(filteredDirectories, function(directory) {
       tasks.push(
         function(parallelCallback) {
           uploadDirectory(_Flickr, directory, photosets, parallelCallback);
         }
       );
     });
-    async.parallelLimit(tasks, conf.photos.parallelUploadDirectories, next); 
+    async.parallelLimit(tasks, conf.photos.parallelUploadDirectories, function(error, results) {
+      next(null, photosets, directories);
+    }); 
+  },
+  function(photosets, directories, next) {
+    if (conf.photos.mode !== 'download' && conf.photos.mode !== 'sync') {
+      // TODO remove photoset
+      return next(null, photosets, directories);
+    }
+
+    // Download photoset from flickr
+    var directoriresName = [];
+    _.each(directories, function(directory) {
+      directoriresName.push(path.basename(directory));
+    });
+    var photosetsName = _.pluck(_.pluck(photosets, "title"), "_content");
+    var filteredPhotosetsName = fileHelper.applyExclusionRules(photosetsName);
+    var tasks = [];
+    _.each(photosets, function(photoset, parallelCallback) {
+      if (_.contains(filteredPhotosetsName, photoset.title._content) && !_.contains(directoriresName, photoset.title._content)) {
+        tasks.push(
+          function(parallelCallback) {
+            downloadDirectory(_Flickr, photoset, path.join(conf.photos.path, photoset.title._content), parallelCallback);
+          }
+        );
+      }
+    });
+    async.parallelLimit(tasks, conf.photos.parallelDownloadDirectories || 1, function(error, results) {
+      next(null, photosets, directories);
+    }); 
   }
 ], function(error, result) {
   if (error) {

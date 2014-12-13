@@ -120,6 +120,11 @@ var getRecursivelyConf = module.exports.getRecursivelyConf = function(dirPath, f
   return {};
 };
 
+/*module.exports.applyDirectoriesExclusionRules = function(directories) {
+
+};*/
+
+
 module.exports.applyExclusionRules = function(directories) {
   var directoriesByRules = [], 
       forceExcludedDirectoriesLowerCase = [],
@@ -164,7 +169,7 @@ module.exports.applyExclusionRules = function(directories) {
     }
   });
   return directoriesByRules.sort();
-}
+};
 
 function formatArray(datas) {
   var outputDatas = [];

@@ -21,7 +21,7 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
         return next();
       }
       // Check if flickr photoset exist
-      var results = _.where(photosets.photoset, {'title': {'_content': path.basename(dirPath)}});
+      var results = _.where(photosets, {'title': {'_content': path.basename(dirPath)}});
       // New photoset, upload photos
       if (results.length === 0) {
         //winston.info("Create photoset", JSON.stringify({"name": path.basename(dirPath)}));
@@ -142,7 +142,8 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       }); 
     },
     function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
-      if (!conf.photos.syncLocal || newLocalPhotos.length === 0) {
+      if (conf.photos.mode === "upload" || newLocalPhotos.length === 0) {
+        // TODO remove photos
         return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
       }
       

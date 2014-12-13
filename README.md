@@ -5,8 +5,8 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
 
 ## Features
 
-  1. If you haven't a token, you will be asked to create it ;
-  2. You can abort and restart the sync, the app bypass the uploaded photos ;
+  1. Create token if needed ;
+  2. Start, stop, restart the sync ;
   3. Your localy folder name would be an album on flickr ;
   4. All your folders or subfolders name would be a collection of tags on flickr ; 
   5. Each folder name would be split by the char '-' to get a collection of tags ;
@@ -17,12 +17,14 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
   10. Add an application launcher for windows, double click on the sync.bat; 
   11. Update photo permissions if config file change ;
   12. Update photo tags if needed (creating or updating subfolders) ;
-  13. Remove duplicated photos from same photoset ;
-  14. Each photo who is duplicate is copied in an album named "DuplicatedTrash" ; 
-  15. You can add to each folder a specific conf to manage permissions and tags. Add a directory '.sync' and put inside a conf file named 'flickr.json' ;
-  16. New function to remove a photoset, all photos are linked to the trash photoset ;
-  17. New function to delete each photos inside a trash photoset ;
-  18. Download non-existing flickr photos from a photoset, create folders and sub-folders to store it.
+  13. Update photo description if needed ;
+  14. Remove duplicated photos from same photoset ;
+  15. Each photo who is duplicate is copied in an album named "DuplicatedTrash" ; 
+  16. You can add to each folder a specific conf to manage permissions and tags. Add a directory '.sync' and put inside a conf file named 'flickr.json' ;
+  17. New function to remove a photoset, all photos are linked to the trash photoset ;
+  18. New function to delete each photos inside a trash photoset ;
+  19. Download non-existing flickr photos from a photoset, create folders and sub-folders to store it ;
+  20. Download 
 
 ## Donation
 
@@ -70,6 +72,10 @@ node src/sync.js argConf.json argToken.json
   * photos.isPublic: boolean to set the photo permission to public ;
   * photos.isFriend: boolean to set the photo permission to friend ;
   * photos.isFamily: boolean to set the photo permission to family ;
+  * photos.mode: 
+    * sync : download and upload photos ;
+    * download : download flickr photos to local file system ;
+    * upload : upload local photos to flickr ;
   * photos.parallelUpdateInfos: number of photos who are parallely updated ;
   * photos.parallelUpdatePerms: number of photos who are parallely updated ;
   * photos.parallelUploadDirectories: number of directories who are parallely uploaded ;
@@ -80,7 +86,6 @@ node src/sync.js argConf.json argToken.json
   * photos.excluded.forceIncludedDirectories: array of included directories ;
   * photos.excluded.forceToUseOnlyIncludedDirectories: boolean to only use the included directories ;
   * photos.remove duplicated : boolean to remove duplicated photos from same photoset ;
-  * photos.syncLocal : boolean to download flickr photos to local file system ;
   * photos.tags : array of string with all tags to add to each photo in folder and subolders ;
   * photos.trash : array of trash objects. Each object has two parameters 'type' and 'name' ;
   * photos.updateTags: boolean to update tags.
