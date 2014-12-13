@@ -80,14 +80,21 @@ module.exports.getFileInfos = function(dirPath, filePath) {
   if (specificConf.tags) {
     tags.push(specificConf.tags);
   }
+  tags = _.flatten(tags);
 
+  var dirName = tags.length > 0 ? tags[0] : '.'+path.sep;
+  var relativePath = path.join(filePath, '..').replace(dirPath, '.');
+  var description = {"dirName": dirName, "relativePath": relativePath, "separator": path.sep};
   return {
+    _description: description,
+    _tags: tags,
     path: filePath,
-    relativePath: filePath.replace(path.join(dirPath, '..'), '.'),
-    name: path.basename(filePath),
-    nameWithoutExt: path.basename(filePath, path.extname(filePath)),
-    _tags: _.flatten(tags),
-    tags: formatTags(_.flatten(tags)),
+    relativePath: relativePath,
+    fileName: path.basename(filePath),
+    fileNameWithoutExt: path.basename(filePath, path.extname(filePath)),
+    dirName: dirName,
+    description: JSON.stringify(description),
+    tags: formatTags(_.clone(tags)),
     isPublic: specificConf.hasOwnProperty("isPublic") ? specificConf.isPublic : conf.photos.isPublic, 
     isFriend: specificConf.hasOwnProperty("isFriend") ? specificConf.isFriend : conf.photos.isFriend, 
     isFamily: specificConf.hasOwnProperty("isFamily") ? specificConf.isFamily : conf.photos.isFamily 

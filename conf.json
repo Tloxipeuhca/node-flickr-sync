@@ -13,7 +13,7 @@
     "isFriend": 0, 
     "isFamily": 0,
     "parallelUpdatePerms": 4,
-    "parallelUpdateTags": 4,
+    "parallelUpdateInfos": 4,
     "parallelUploadDirectories": 1,
     "parallelUploadPhotos": 1,
     "removeDuplicated": true,

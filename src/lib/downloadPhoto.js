@@ -1,13 +1,16 @@
-var    _ = require('lodash'), 
-   async = require('async'),
-      fs = require('fs'),
- request = require('request');
+var        _ = require('lodash'), 
+       async = require('async'),
+          fs = require('fs'),
+  htmlHelper = require('../helpers/htmlHelper'),
+      mkdirp = require('mkdirp'),
+        path = require('path'),
+     request = require('request'),
+     winston = require('winston');
 
 var download = function(uri, filename, callback){
   request.head(uri, function(err, res, body){
-    console.log('content-type:', res.headers['content-type']);
-    console.log('content-length:', res.headers['content-length']);
-
+    //console.log('content-type:', res.headers['content-type']);
+    //console.log('content-length:', res.headers['content-length']);
     request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
   });
 };
@@ -31,40 +34,38 @@ module.exports = function(flickrApi, photo, dirPath, callback) {
       });
     },
     function(photoSizes, photoInfo, next) {
-      //console.log('*************photoInfo*********************')
-      //console.log(photoInfo)
-      //console.log(photoSizes)
-      //console.log(JSON.parse(htmlDecode(photoInfo.description._content)))
       var originalPhoto = _.where(photoSizes, {'label': 'Original'});
       if (originalPhoto.length === 0) {
         return next(null, photo);
       }
-      //console.log(originalPhoto[0].source)
-      //console.log(dirPath+'\\'+photoInfo.title._content+'.'+photoInfo.originalformat)
-      download(originalPhoto[0].source, dirPath+'\\'+photoInfo.title._content+'.'+photoInfo.originalformat, next);
+      var description = {};
+      
+      try {
+        description = JSON.parse(htmlHelper.htmlDecode(photoInfo.description._content));
+        dirPath = path.join(dirPath, description.relativePath);
+      }
+      catch(e) {
+        winston.warn("Donwload photo, description is not a valid JSON", JSON.stringify(htmlHelper.htmlDecode(photoInfo.description._content)));
+      }
+
+      var filePath = path.join(dirPath, photoInfo.title._content+'.'+photoInfo.originalformat);
+      winston.info("Donwload photo", JSON.stringify({"photo": {"path": originalPhoto[0].source}, "file": {"path": filePath}}));
+
+      try {
+        if(!fs.existsSync(dirPath)) {
+          mkdirp.sync(dirPath);
+        }
+        download(originalPhoto[0].source, filePath, next);
+      }
+      catch(e) {
+        next("can't create dir "+dirPath);
+      }
     }
   ], function(error, photo) {
     if (error) {
-      winston.warn("Download photo", e.toString());
+      winston.error("Download photo", error.toString());
     }
     callback(null, photo);
   });
 };
 
-function htmlEncode(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function htmlDecode(value){
-  return String(value)
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}

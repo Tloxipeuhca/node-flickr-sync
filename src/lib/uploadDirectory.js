@@ -5,6 +5,7 @@ var                _ = require('lodash'),
           fileHelper = require('../helpers/fileHelper'),
                   fs = require('fs'),
    getPhotosetPhotos = require('./getPhotosetPhotos'),
+          htmlHelper = require('../helpers/htmlHelper'), 
                 path = require('path'),
      photoSetManager = require('./photoSetManager'),           
              winston = require('winston');
@@ -35,7 +36,7 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
 var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickrApi, photoset, dirPath, files, callback) {
   async.waterfall([
     function(next) {
-      winston.info("Get photoset photos", JSON.stringify({"id": photoset.id, "name": photoset.title._content}));
+      winston.debug("Get photoset photos", JSON.stringify({"id": photoset.id, "name": photoset.title._content}));
       getPhotosetPhotos(flickrApi, photoset.id, next);
     },
     function(photos, next) {
@@ -102,21 +103,21 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       }); 
     },
     function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
-      if (!conf.photos.updateTags) {
+      if (!conf.photos.updateTags && !conf.photos.updateDescription) {
         return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
       }
 
-      // Update photos tags
+      // Update photos info
       var tasks = [];
       var photosConf = conf.photos;
       _.each(existingPhotos, function(photo) { 
         tasks.push(
           function(parallelCallback) {
-            updatePhotoTags(flickrApi, photo, photo.path, dirPath, parallelCallback);
+            updatePhotoInfos(flickrApi, photo, photo.path, dirPath, parallelCallback);
           }
         );
       });
-      async.parallelLimit(tasks, photosConf.parallelUpdateTags || 1, function(error, results) {
+      async.parallelLimit(tasks, photosConf.parallelUpdateInfos || 1, function(error, results) {
         return next(error, results, duplicatePhotos, newLocalPhotos);
       }); 
     }, 
@@ -162,7 +163,8 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
   ], callback);
 };
 
-var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photo, filePath, dirPath, callback) {
+var updatePhotoInfos = module.exports.updatePhotoInfos = function(flickrApi, photo, filePath, dirPath, callback) {
+  var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
   async.waterfall([
     function(next) {
       flickrApi.photos.getInfo({"photo_id": photo.id}, function(error, result) {
@@ -173,23 +175,34 @@ var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photo
       });
     },
     function(photoInfo, next) {
-      var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
       var photoTags = _.pluck(photoInfo.tags.tag, "raw").sort();
       var fileTags = fileInfo._tags.sort();
       var isEqual = _.isEqual(photoTags, fileTags);
-      winston.debug("Check photo tags", JSON.stringify({"id": photo.id, "photo": photoTags, "file": fileTags, "isEqual": isEqual}));
+      winston.debug("Check photo tags", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": photoTags, "file": fileTags}));
 
+      if (isEqual) {
+        return next(null, photoInfo);
+      }
+      winston.info("Update photo tags", JSON.stringify({"id": photo.id, "title": photo.title}));
+      flickrApi.photos.setTags({"photo_id": photo.id, "tags": fileInfo.tags}, function(error, result) {
+        next(error, photoInfo);
+      });
+    },
+    function(photoInfo, next) {
+      var photoDescription = htmlHelper.htmlDecode(photoInfo.description._content);
+      var isEqual = photoDescription === fileInfo.description;
+      winston.debug("Check photo description", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": photoDescription, "file": fileInfo.description}));
       if (isEqual) {
         return next(null, photo);
       }
-      winston.info("Update photo tags", JSON.stringify({"id": photo.id}));
-      flickrApi.photos.setTags({"photo_id": photo.id, "tags": fileInfo.tags}, function(error, result) {
+      winston.info("Update photo description", JSON.stringify(_.extend({"id": photo.id, "title": photo.title}, fileInfo._description)));
+      flickrApi.photos.setMeta({"photo_id": photo.id, "description": fileInfo.description}, function(error, result) {
         next(error, photo);
       });
     }
   ], function(error, photo) {
     if (error) {
-      winston.warn("Update photo tags", e.toString());
+      winston.warn("Update photo infos", e.toString());
     }
     callback(null, photo);
   });

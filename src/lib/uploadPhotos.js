@@ -19,10 +19,10 @@ module.exports = function(flickrApi, dirPath, filePaths, callback) {
         var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
         
         photos.push({
-          title: fileInfo.nameWithoutExt,
+          title: fileInfo.fileNameWithoutExt,
           tags: fileInfo.tags.join(' '),
           photo: fileInfo.path,
-          description: JSON.stringify(_.pick(fileInfo, 'relativePath')),
+          description: fileInfo.description,
           is_public: fileInfo.isPublic, 
           is_friend: fileInfo.isFriend, 
           is_family: fileInfo.isFamily
