@@ -30,8 +30,8 @@
         "name": "RemoveTrash"
       },
       {
-        "type": "sync",
-        "name": "SyncTrash"
+        "type": "mirror",
+        "name": "MirrorTrash"
       }
     ],
     "updateTags": true

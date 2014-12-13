@@ -129,10 +129,10 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       // Remove duplicated photos
       winston.info("Remove duplicated photos", JSON.stringify(duplicatePhotos));
       var tasks = [];
+      var duplicatedPhotoset = _.find(conf.photos.trash, {"type": "duplicated"});
       _.each(duplicatePhotos, function(photo) { 
         tasks.push(
           function(parallelCallback) {
-            var duplicatedPhotoset = _.find(conf.photos.trash, {"type": "duplicated"});
             photoSetManager.removePhoto(flickrApi, photoset, photo, duplicatedPhotoset, parallelCallback);
           }
         );
@@ -142,24 +142,46 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       }); 
     },
     function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
-      if (conf.photos.mode === "upload" || newLocalPhotos.length === 0) {
-        // TODO remove photos
+      if (newLocalPhotos.length === 0) {
         return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
       }
-      
-      // Download non existing photos
-      winston.info("Download photos", JSON.stringify(newLocalPhotos));
-      var tasks = [];
-      _.each(newLocalPhotos, function(photo) { 
-        tasks.push(
-          function(parallelCallback) {
-            downloadPhoto(flickrApi, photo, photo.dirPath, parallelCallback);
-          }
-        );
-      });
-      async.parallelLimit(tasks, 1, function(error, results) {
-        return next(error, existingPhotos, duplicatePhotos, results);
-      }); 
+      switch(conf.photos.mode) {
+        case 'mirror':
+          // Remove non existing photos
+          winston.info("Remove photos", JSON.stringify(newLocalPhotos));
+          var tasks = [];
+          var mirrorPhotoset = _.find(conf.photos.trash, {"type": "mirror"});
+          _.each(newLocalPhotos, function(photo) { 
+            tasks.push(
+              function(parallelCallback) {
+                photoSetManager.removePhoto(flickrApi, photoset, photo, mirrorPhotoset, parallelCallback);
+              }
+            );
+          });
+          async.parallelLimit(tasks, 1, function(error, results) {
+            return next(error, existingPhotos, duplicatePhotos, results);
+          }); 
+          break;
+        case 'sync':
+        case 'download':
+          // Download non existing photos
+          winston.info("Download photos", JSON.stringify(newLocalPhotos));
+          var tasks = [];
+          _.each(newLocalPhotos, function(photo) { 
+            tasks.push(
+              function(parallelCallback) {
+                downloadPhoto(flickrApi, photo, photo.dirPath, parallelCallback);
+              }
+            );
+          });
+          async.parallelLimit(tasks, 1, function(error, results) {
+            return next(error, existingPhotos, duplicatePhotos, results);
+          }); 
+          break;
+        case 'upload':
+        default:
+          return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
+      }      
     }
   ], callback);
 };

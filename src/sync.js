@@ -7,6 +7,7 @@ downloadDirectory = require('./lib/downloadDirectory'),
                fs = require('fs'),
       tokenHelper = require('./helpers/tokenHelper'),
              path = require('path'),
+  photoSetManager = require('./lib/photoSetManager'),       
   uploadDirectory = require('./lib/uploadDirectory'),
           winston = require('winston');
 
@@ -51,13 +52,13 @@ async.waterfall([
       return next('Dircectory path to sync doesn\'t exist: '+photosPath)
     }
     var directories = fileHelper.getDirectories(photosPath);
-    if (conf.photos.mode !== 'upload' && conf.photos.mode !== 'sync') {
+    if (conf.photos.mode === 'download') {
       return next(null, photosets, directories);
     }
 
     // Function to exclude directories to sync
     var filteredDirectories = fileHelper.applyExclusionRules(directories);
-    winston.debug(filteredDirectories.length + ' directories to sync', JSON.stringify(filteredDirectories));
+    winston.info(filteredDirectories.length + ' directories to sync', JSON.stringify(filteredDirectories));
     var tasks = [];
     _.each(filteredDirectories, function(directory) {
       tasks.push(
@@ -71,31 +72,61 @@ async.waterfall([
     }); 
   },
   function(photosets, directories, next) {
-    if (conf.photos.mode !== 'download' && conf.photos.mode !== 'sync') {
-      // TODO remove photoset
-      return next(null, photosets, directories);
-    }
-
-    // Download photoset from flickr
     var directoriresName = [];
     _.each(directories, function(directory) {
       directoriresName.push(path.basename(directory));
     });
     var photosetsName = _.pluck(_.pluck(photosets, "title"), "_content");
     var filteredPhotosetsName = fileHelper.applyExclusionRules(photosetsName);
+    var newPhotosets = [];
     var tasks = [];
     _.each(photosets, function(photoset, parallelCallback) {
       if (_.contains(filteredPhotosetsName, photoset.title._content) && !_.contains(directoriresName, photoset.title._content)) {
-        tasks.push(
-          function(parallelCallback) {
-            downloadDirectory(_Flickr, photoset, path.join(conf.photos.path, photoset.title._content), parallelCallback);
-          }
-        );
+        newPhotosets.push(photoset);
       }
     });
-    async.parallelLimit(tasks, conf.photos.parallelDownloadDirectories || 1, function(error, results) {
-      next(null, photosets, directories);
-    }); 
+
+    switch(conf.photos.mode) {
+      case 'sync':
+      case 'download':
+        // Download photoset from flickr
+        winston.info(newPhotosets.length+' photosets to download', JSON.stringify(newPhotosets));
+        _.each(newPhotosets, function(photoset) {
+          tasks.push(
+            function(parallelCallback) {
+              downloadDirectory(_Flickr, photoset, path.join(conf.photos.path, photoset.title._content), function(error) {
+                parallelCallback();
+              });
+            }
+          );
+        });
+        async.parallelLimit(tasks, conf.photos.parallelDownloadDirectories || 1, function(error, results) {
+          next(null, photosets, directories);
+        }); 
+        break;
+      case 'mirror':
+        // Remove photoset from flickr
+        winston.info(newPhotosets.length+' photosets to remove', JSON.stringify(newPhotosets));
+        var removePhotoset = _.find(conf.photos.trash, {"type": "mirror"});
+        _.each(newPhotosets, function(photoset) {
+          tasks.push(
+            function(parallelCallback) {
+              //downloadDirectory(_Flickr, photoset, path.join(conf.photos.path, photoset.title._content), parallelCallback);
+              photoSetManager.removePhotoset(_Flickr, photoset, removePhotoset, function(error) {
+                parallelCallback();
+              });
+            }
+          );
+        });
+        async.parallelLimit(tasks, conf.photos.parallelDownloadDirectories || 1, function(error, results) {
+          next(null, photosets, directories);
+        }); 
+
+        break;
+      case 'upload':
+      default:
+        next(null, photosets, directories);
+    }
   }
 ], function(error, result) {
   if (error) {

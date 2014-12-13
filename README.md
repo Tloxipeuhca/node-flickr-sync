@@ -23,8 +23,8 @@ You can check the result on [my flickr](https://www.flickr.com/photos/129434165@
   16. You can add to each folder a specific conf to manage permissions and tags. Add a directory '.sync' and put inside a conf file named 'flickr.json' ;
   17. New function to remove a photoset, all photos are linked to the trash photoset ;
   18. New function to delete each photos inside a trash photoset ;
-  19. Download non-existing flickr photos from a photoset, create folders and sub-folders to store it ;
-  20. Download 
+  19. Download non-existing flickr photos stored in photoset, create locally folders and sub-folders to store it ;
+  20. Download non-existing flickr photoset photos, create folders and sub-folders to store it.
 
 ## Donation
 
@@ -73,8 +73,9 @@ node src/sync.js argConf.json argToken.json
   * photos.isFriend: boolean to set the photo permission to friend ;
   * photos.isFamily: boolean to set the photo permission to family ;
   * photos.mode: 
-    * sync : download and upload photos ;
     * download : download flickr photos to local file system ;
+    * mirror : upload local photos to flickr and remove flickr photos who arne't local ;
+    * sync : download and upload photos ;
     * upload : upload local photos to flickr ;
   * photos.parallelUpdateInfos: number of photos who are parallely updated ;
   * photos.parallelUpdatePerms: number of photos who are parallely updated ;
