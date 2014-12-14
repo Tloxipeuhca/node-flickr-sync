@@ -34,6 +34,8 @@
         "name": "MirrorTrash"
       }
     ],
+    "updateDescription": true,
+    "updatePerms": true,
     "updateTags": true
   },
   "winston": {

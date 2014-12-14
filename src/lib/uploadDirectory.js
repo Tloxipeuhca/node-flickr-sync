@@ -72,6 +72,10 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
       });
     },
     function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
+      if (!conf.photos.updatePerms) {
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
+      }
+
       // Update photos perms if needed
       var tasks = [];
       _.each(existingPhotos, function(photo) {
@@ -198,6 +202,10 @@ var updatePhotoInfos = module.exports.updatePhotoInfos = function(flickrApi, pho
       });
     },
     function(photoInfo, next) {
+      if (!conf.photos.updateTags) {
+        return next(null, photoInfo);
+      }
+
       var photoTags = _.pluck(photoInfo.tags.tag, "raw").sort();
       var fileTags = fileInfo._tags.sort();
       var isEqual = _.isEqual(photoTags, fileTags);
@@ -212,6 +220,10 @@ var updatePhotoInfos = module.exports.updatePhotoInfos = function(flickrApi, pho
       });
     },
     function(photoInfo, next) {
+      if (!conf.photos.updateDescription) {
+        return next(null, photo);
+      }
+
       var photoDescription = htmlHelper.htmlDecode(photoInfo.description._content);
       var isEqual = photoDescription === fileInfo.description;
       winston.debug("Check photo description", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": photoDescription, "file": fileInfo.description}));
@@ -225,7 +237,7 @@ var updatePhotoInfos = module.exports.updatePhotoInfos = function(flickrApi, pho
     }
   ], function(error, photo) {
     if (error) {
-      winston.warn("Update photo infos", e.toString());
+      winston.warn("Update photo infos", error.toString());
     }
     callback(null, photo);
   });

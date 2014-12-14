@@ -89,7 +89,9 @@ node src/sync.js argConf.json argToken.json
   * photos.remove duplicated : boolean to remove duplicated photos from same photoset ;
   * photos.tags : array of string with all tags to add to each photo in folder and subolders ;
   * photos.trash : array of trash objects. Each object has two parameters 'type' and 'name' ;
-  * photos.updateTags: boolean to update tags.
+  * photos.updatePerms : boolean to update photo perms ;
+  * photos.updateDescription: boolean to update photo description ;
+  * photos.updateTags: boolean to update photo tags.
 
 ### Scope: current folder
 
