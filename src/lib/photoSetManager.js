@@ -167,7 +167,7 @@ var removePhoto = module.exports.removePhoto = function(flickrApi, photoset, pho
     }*/
   ], function(error) {
     if (error) {
-      winston.error("Remove photo "+photo.id+" from "+photoset.title._content+". ", error.toString());
+      winston.warn("Remove photo "+photo.id+" from "+photoset.title._content+". ", error.toString());
     }
     callback(null);
   });  

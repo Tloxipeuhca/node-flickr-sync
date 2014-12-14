@@ -1,9 +1,11 @@
 var                _ = require('lodash'),
                async = require('async'),
                 conf = require('../helpers/confHelper'),
+       downloadPhoto = require('./downloadPhoto'),
           fileHelper = require('../helpers/fileHelper'),
                   fs = require('fs'),
    getPhotosetPhotos = require('./getPhotosetPhotos'),
+          htmlHelper = require('../helpers/htmlHelper'), 
                 path = require('path'),
      photoSetManager = require('./photoSetManager'),           
              winston = require('winston');
@@ -19,7 +21,7 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
         return next();
       }
       // Check if flickr photoset exist
-      var results = _.where(photosets.photoset, {'title': {'_content': path.basename(dirPath)}});
+      var results = _.where(photosets, {'title': {'_content': path.basename(dirPath)}});
       // New photoset, upload photos
       if (results.length === 0) {
         //winston.info("Create photoset", JSON.stringify({"name": path.basename(dirPath)}));
@@ -34,19 +36,22 @@ module.exports = function(flickrApi, dirPath, photosets, callback) {
 var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickrApi, photoset, dirPath, files, callback) {
   async.waterfall([
     function(next) {
-      winston.info("Get photoset photos", JSON.stringify({"id": photoset.id, "name": photoset.title._content}));
+      winston.debug("Get photoset photos", JSON.stringify({"id": photoset.id, "name": photoset.title._content}));
       getPhotosetPhotos(flickrApi, photoset.id, next);
     },
     function(photos, next) {
       // Upload new photos
-      var     newPhotos = [],
-         existingPhotos = [],
-        duplicatePhotos = [];
+      var newFlickPhotos = [],
+          newLocalPhotos = [],
+          existingPhotos = [],
+               filesName = [];
+         duplicatePhotos = [];
       _.each(files, function(file) {
         var fileName = path.basename(file, path.extname(file));
+        filesName.push(fileName);
         var results = _.where(photos, {'title': fileName});
         if (results.length === 0) {
-          newPhotos.push(file);
+          newFlickPhotos.push(file);
         }
         else {
           results[0].path = file;
@@ -55,11 +60,22 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         }
       });
 
-      photoSetManager.uploadPhotosToPhotoset(flickrApi, photoset, dirPath, newPhotos, function(error, results) {
-        return next(error, existingPhotos, _.flatten(duplicatePhotos));
+      _.each(photos, function(photo) {
+        if (!_.contains(filesName, photo.title)) {
+          photo.dirPath = dirPath;
+          newLocalPhotos.push(photo);
+        }
+      });
+
+      photoSetManager.uploadPhotosToPhotoset(flickrApi, photoset, dirPath, newFlickPhotos, function(error, results) {
+        return next(error, existingPhotos, _.flatten(duplicatePhotos), newLocalPhotos);
       });
     },
-    function(existingPhotos, duplicatePhotos, next) {
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
+      if (!conf.photos.updatePerms) {
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
+      }
+
       // Update photos perms if needed
       var tasks = [];
       _.each(existingPhotos, function(photo) {
@@ -87,52 +103,95 @@ var syncExistingPhotoSet = module.exports.syncExistingPhotoSet = function(flickr
         }
       });
       async.parallelLimit(tasks, conf.photos.parallelUpdatePerms || 1, function(error) {
-        return next(error, existingPhotos, duplicatePhotos);
+        return next(error, existingPhotos, duplicatePhotos, newLocalPhotos);
       }); 
     },
-    function(existingPhotos, duplicatePhotos, next) {
-      if (!conf.photos.updateTags) {
-        return next(null, existingPhotos, duplicatePhotos);
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
+      if (!conf.photos.updateTags && !conf.photos.updateDescription) {
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
       }
 
-      // Update photos tags
+      // Update photos info
       var tasks = [];
       var photosConf = conf.photos;
       _.each(existingPhotos, function(photo) { 
         tasks.push(
           function(parallelCallback) {
-            updatePhotoTags(flickrApi, photo, photo.path, dirPath, parallelCallback);
+            updatePhotoInfos(flickrApi, photo, photo.path, dirPath, parallelCallback);
           }
         );
       });
-      async.parallelLimit(tasks, photosConf.parallelUpdateTags || 1, function(error, results) {
-        return next(error, results, duplicatePhotos);
+      async.parallelLimit(tasks, photosConf.parallelUpdateInfos || 1, function(error, results) {
+        return next(error, results, duplicatePhotos, newLocalPhotos);
       }); 
     }, 
-    function(existingPhotos, duplicatePhotos, next) {
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
       if (!conf.photos.removeDuplicated || duplicatePhotos.length === 0) {
-        return next(null);
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
       }
 
       // Remove duplicated photos
       winston.info("Remove duplicated photos", JSON.stringify(duplicatePhotos));
       var tasks = [];
+      var duplicatedPhotoset = _.find(conf.photos.trash, {"type": "duplicated"});
       _.each(duplicatePhotos, function(photo) { 
         tasks.push(
           function(parallelCallback) {
-            var duplicatedPhotoset = _.find(conf.photos.trash, {"type": "duplicated"});
             photoSetManager.removePhoto(flickrApi, photoset, photo, duplicatedPhotoset, parallelCallback);
           }
         );
       });
       async.parallelLimit(tasks, 1, function(error, results) {
-        return next(null);
+        return next(error, existingPhotos, results, newLocalPhotos);
       }); 
+    },
+    function(existingPhotos, duplicatePhotos, newLocalPhotos, next) {
+      if (newLocalPhotos.length === 0) {
+        return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
+      }
+      switch(conf.photos.mode) {
+        case 'mirror':
+          // Remove non existing photos
+          winston.info("Remove photos", JSON.stringify(newLocalPhotos));
+          var tasks = [];
+          var mirrorPhotoset = _.find(conf.photos.trash, {"type": "mirror"});
+          _.each(newLocalPhotos, function(photo) { 
+            tasks.push(
+              function(parallelCallback) {
+                photoSetManager.removePhoto(flickrApi, photoset, photo, mirrorPhotoset, parallelCallback);
+              }
+            );
+          });
+          async.parallelLimit(tasks, 1, function(error, results) {
+            return next(error, existingPhotos, duplicatePhotos, results);
+          }); 
+          break;
+        case 'sync':
+        case 'download':
+          // Download non existing photos
+          winston.info("Download photos", JSON.stringify(newLocalPhotos));
+          var tasks = [];
+          _.each(newLocalPhotos, function(photo) { 
+            tasks.push(
+              function(parallelCallback) {
+                downloadPhoto(flickrApi, photo, photo.dirPath, parallelCallback);
+              }
+            );
+          });
+          async.parallelLimit(tasks, 1, function(error, results) {
+            return next(error, existingPhotos, duplicatePhotos, results);
+          }); 
+          break;
+        case 'upload':
+        default:
+          return next(null, existingPhotos, duplicatePhotos, newLocalPhotos);
+      }      
     }
   ], callback);
 };
 
-var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photo, filePath, dirPath, callback) {
+var updatePhotoInfos = module.exports.updatePhotoInfos = function(flickrApi, photo, filePath, dirPath, callback) {
+  var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
   async.waterfall([
     function(next) {
       flickrApi.photos.getInfo({"photo_id": photo.id}, function(error, result) {
@@ -143,24 +202,43 @@ var updatePhotoTags = module.exports.updatePhotoTags = function(flickrApi, photo
       });
     },
     function(photoInfo, next) {
-      var fileInfo = fileHelper.getFileInfos(dirPath, filePath);
+      if (!conf.photos.updateTags) {
+        return next(null, photoInfo);
+      }
+
       var photoTags = _.pluck(photoInfo.tags.tag, "raw").sort();
       var fileTags = fileInfo._tags.sort();
       var isEqual = _.isEqual(photoTags, fileTags);
-      winston.debug("Check photo tags", JSON.stringify({"id": photo.id, "photo": photoTags, "file": fileTags, "isEqual": isEqual}));
+      winston.debug("Check photo tags", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": photoTags, "file": fileTags}));
 
+      if (isEqual) {
+        return next(null, photoInfo);
+      }
+      winston.info("Update photo tags", JSON.stringify({"id": photo.id, "title": photo.title}));
+      flickrApi.photos.setTags({"photo_id": photo.id, "tags": fileInfo.tags}, function(error, result) {
+        next(error, photoInfo);
+      });
+    },
+    function(photoInfo, next) {
+      if (!conf.photos.updateDescription) {
+        return next(null, photo);
+      }
+
+      var photoDescription = htmlHelper.htmlDecode(photoInfo.description._content);
+      var isEqual = photoDescription === fileInfo.description;
+      winston.debug("Check photo description", JSON.stringify({"id": photo.id, "isEqual": isEqual, "photo": photoDescription, "file": fileInfo.description}));
       if (isEqual) {
         return next(null, photo);
       }
-      winston.info("Update photo tags", JSON.stringify({"id": photo.id}));
-      flickrApi.photos.setTags({"photo_id": photo.id, "tags": fileInfo.tags}, function(error, result) {
+      winston.info("Update photo description", JSON.stringify(_.extend({"id": photo.id, "title": photo.title}, fileInfo._description)));
+      flickrApi.photos.setMeta({"photo_id": photo.id, "description": fileInfo.description}, function(error, result) {
         next(error, photo);
       });
     }
   ], function(error, photo) {
     if (error) {
-      winston.warn("Update photo tags", e.toString());
+      winston.warn("Update photo infos", error.toString());
     }
     callback(null, photo);
   });
-}
+};
