@@ -82,7 +82,7 @@ module.exports.getFileInfos = function(dirPath, filePath) {
   }
   tags = _.flatten(tags);
 
-  var dirName = tags.length > 0 ? tags[0] : '.'+path.sep;
+  var dirName = directories.length > 0 ? directories[0] : '.'+path.sep;
   var relativePath = path.join(filePath, '..').replace(dirPath, '.');
   var description = {"dirName": dirName, "relativePath": relativePath, "separator": path.sep};
   return {
